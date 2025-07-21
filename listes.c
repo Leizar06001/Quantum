@@ -55,33 +55,33 @@ int print_messages(Game *game) {
 	while (current != NULL) {
 
 		// Check the distance to message origin
-		double dist = 0;
-		if (current->player_id > 0){
-			// This uses strait line
-			// dist = distance(game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
+		// double dist = 0;
+		// if (current->player_id > 0){
+		// 	// This uses strait line
+		// 	// dist = distance(game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
 			
-			// This search for shortest dist avoiding walls
-			dist = shortest_distance(game->map.map, game->map.w, game->map.h, game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
-		}
+		// 	// This search for shortest dist avoiding walls
+		// 	dist = shortest_distance(game->map.map, game->map.w, game->map.h, game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
+		// }
 		
 		// wprintw(game->display.info, "Dist: %f\n", dist);
 		// wrefresh(game->display.info);
 
-		if (dist < DIST_NO_HEAR && dist >= 0){
-			if (dist > DIST_NOISE){
-				// some random noise
-				int chances_noise = ((dist - DIST_NOISE) * 100) / (DIST_NO_HEAR - DIST_NOISE);
-				int ic = 0;
-				while (current->text_buffer[ic]){
-					if (rand() % 100 < chances_noise){
-						current->text_buffer[ic] = '.';
-					}
-					ic++;
-				}
+		// if (dist < DIST_NO_HEAR && dist >= 0){
+		// 	if (dist > DIST_NOISE){
+		// 		// some random noise
+		// 		int chances_noise = ((dist - DIST_NOISE) * 100) / (DIST_NO_HEAR - DIST_NOISE);
+		// 		int ic = 0;
+		// 		while (current->text_buffer[ic]){
+		// 			if (rand() % 100 < chances_noise){
+		// 				current->text_buffer[ic] = '.';
+		// 			}
+		// 			ic++;
+		// 		}
 
-			} else {
-				// Hear good
-			}
+		// 	} else {
+		// 		// Hear good
+		// 	}
 
 			if (current->color <= MAX_COLOR){
 				wattron(game->display.chat, COLOR_PAIR(current->color)); // Activer la couleur du message
@@ -90,8 +90,7 @@ int print_messages(Game *game) {
 			if (current->color <= MAX_COLOR){
 				wattroff(game->display.chat, COLOR_PAIR(current->color)); // Désactiver la couleur
 			}
-			
-		}
+		// }
 
 		Messages *next = current->next; // Sauvegarder le pointeur vers le message suivant
 		free(current); // Libérer la mémoire du message actuel

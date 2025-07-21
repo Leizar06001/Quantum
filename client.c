@@ -1,5 +1,4 @@
 #include "includes.h"
-#include "map.h"
 
 void *chat_client_thread(void *arg) {
 	Game *game = (Game *)arg;
@@ -244,10 +243,10 @@ int main_client(Game *game){
 	int chat_w = 50; // Largeur de la fenêtre de chat
 	
 	int txt_y = main_y + main_h;
-	int txt_x = chat_x;
-	int txt_h = 4, txt_w = main_w;
+	int txt_x = main_x;
+	int txt_h = 4, txt_w = main_w + chat_w + 1;
 
-	game->display.height = main_h;
+	game->display.height 	= main_h;
 	game->display.width 	= main_w;
 
 	int map_size = strlen(map);

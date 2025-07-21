@@ -3,6 +3,15 @@
 static char debug_buf[1024];
 static char buffer_out[1024];
 
+int send_to_one(int fd_dest, const char *msg, int len){
+	for(int i = 0; i < len; i++){
+		sprintf(debug_buf + i * 3, "%02X ", (unsigned char)msg[i]); 
+	}
+	printf(MAGENTA"Sending to %d: %s\n"RESET, fd_dest, debug_buf);
+	send(fd_dest, msg, len, 0);
+	return 0;
+}
+
 int send_msg_all(int *fds, const char *msg, int len, int fd_orig, uint8_t dont_send_to_orig){
 	for (int j = 0; j < MAX_CLIENTS; j++) {
 		int out = fds[j];
@@ -19,12 +28,64 @@ int send_msg_all(int *fds, const char *msg, int len, int fd_orig, uint8_t dont_s
 	return 0;
 }
 
-int send_to_one(int fd_dest, const char *msg, int len){
-	for(int i = 0; i < len; i++){
-		sprintf(debug_buf + i * 3, "%02X ", (unsigned char)msg[i]); 
+int send_txt_all_calc_dist(Game *game, int *fds, const char *msg, int len, int fd_orig, int id_orig){
+	int id_dec = fd_orig - id_orig;
+	if (id_dec < 0 || fd_orig <= 0) {
+		printf("Erreur: send txt: id_dec or fd_orig\n");	
+		return -1;
 	}
-	printf(MAGENTA"Sending to %d: %s\n"RESET, fd_dest, debug_buf);
-	send(fd_dest, msg, len, 0);
+
+	char new_txt[256] = {0};
+
+	Player *client_orig = &game->clients[id_orig];
+	if (client_orig->connected == 0 || client_orig->x <= 0 || client_orig->y <= 0) {
+		printf("Erreur: send txt: from client not connected\n");
+		return -1;
+	}
+
+	for (int j = 0; j < MAX_CLIENTS; j++) {
+		int out = fds[j];
+
+		if (out > 0) {
+			int id = out - id_dec;
+			Player *client_dest = &game->clients[id];
+
+			if (client_dest->connected == 0 || client_dest->x <= 0 || client_dest->y <= 0) {
+				printf("Erreur: send txt: to client not connected or wrong position\n");
+				return -1;
+			}
+
+			// printf("PosO: %d, %d ; PosD: %d, %d\n", client_orig->x, client_orig->y, client_dest->x, client_dest->y);
+
+			if (out != fd_orig){
+				int dist = shortest_distance(game->map.map, game->map.w, game->map.h, client_orig->x, client_orig->y, client_dest->x, client_dest->y);
+				
+				if (dist > dist_max_txt_msg){	// TOO FAR, NOT SEND
+					printf("Client %d to %d dist %d > Ignore\n", id_orig, id, dist);
+				} else {
+					if (dist > DIST_NOISE){		// SOME TEXT LOSS
+						printf("Client %d to %d dist %d > Noise\n", id_orig, id, dist);
+						int chances_noise = ((dist - DIST_NOISE) * 100) / (DIST_NO_HEAR - DIST_NOISE);
+						int ic = 3;
+						memcpy(new_txt, msg, ic);
+						while (msg[ic]){
+							if (rand() % 100 < chances_noise){
+								new_txt[ic] = '.';
+							} else {
+								new_txt[ic] = msg[ic];
+							}
+							ic++;
+						}
+						new_txt[ic] = '\0';
+						send_to_one(out, new_txt, len);
+					} else {					// CLOSE ENOUGH SO JUST SEND THE MSG
+						printf("Client %d to %d dist %d > OK\n", id_orig, id, dist);
+						send_to_one(out, msg, len);
+					}
+				}
+			}
+		}
+	}
 	return 0;
 }
 
@@ -132,7 +193,8 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 
 				// Send to other clients
 				sprintf(buffer_out, "%c%c%c%s", msg_len, (char)B_MESSAGE, (char)id, text);
-				send_msg_all(game->com.client_fds, buffer_out, msg_len, fd_client, DONT_SEND_ORIG);
+				// send_msg_all(game->com.client_fds, buffer_out, msg_len, fd_client, DONT_SEND_ORIG);
+				send_txt_all_calc_dist(game, game->com.client_fds, buffer_out, msg_len, fd_client, id);
 
 				pos += msg_len;
 
@@ -185,10 +247,43 @@ void handle_sigint(int sig){
     server_running = 0;
 }
 
+int init_map(Game *game){
+	int map_size = strlen(map);
+	game->map.map = (char *)malloc(sizeof(char) * map_size + 1); // Assigner la carte au jeu
+	strcpy(game->map.map, map);
+
+	int nb_doors = 0;
+	for(int i = 0; i < map_size; i++){
+		if (game->map.map[i] == 'v' || game->map.map[i] == 'h'){
+			game->map.doors[nb_doors].enabled = 1;
+			game->map.doors[nb_doors].y = i / map_w;
+			game->map.doors[nb_doors].x = i % map_w;
+			game->map.doors[nb_doors].state = 0;
+			if (game->map.map[i] == 'v'){
+				game->map.doors[nb_doors].vertical = 1;
+			} else {
+				game->map.doors[nb_doors].vertical = 0;
+			}
+			// game->map.map[i] = map_c_empty;
+			nb_doors++;
+		}
+		if (nb_doors > 20) return -1;
+	}
+	game->map.nb_doors = nb_doors;
+
+	game->map.w = map_w; // Assigner la largeur de la carte
+	game->map.h = map_h; // Assigner la hauteur de la carte
+	game->map.map_c_empty = map_c_empty; // Assigner le caractère vide de la carte
+
+	return 0;
+}
+
 int main_server(Game *game){
 	printf(B_GREEN"\nStarting server...\n"RESET);
 
 	signal(SIGINT, handle_sigint);
+
+	if (init_map(game) == -1) goto exit_point;
 
 	int server_fd, client_fds[MAX_CLIENTS] = {0};
     struct sockaddr_in addr;
@@ -200,14 +295,14 @@ int main_server(Game *game){
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) { 
 		perror("socket"); 
-		return 1; 
+		goto exit_point;
 	}
 
 	int opt = 1;
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 		perror("setsockopt");
 		close(server_fd);
-		return 1;
+		goto exit_point;
 	}
 
     addr.sin_family 		= AF_INET;
@@ -215,11 +310,11 @@ int main_server(Game *game){
     addr.sin_port 			= htons(PORT);
 
     if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("bind"); close(server_fd); return 1;
+        perror("bind"); close(server_fd); goto exit_point;
     }
 
     if (listen(server_fd, 5) < 0) {
-        perror("listen"); close(server_fd); return 1;
+        perror("listen"); close(server_fd); goto exit_point;
     }
 
 	printf(B_GREEN"Server running !\n\n"RESET);
@@ -300,7 +395,10 @@ int main_server(Game *game){
     }
 	printf(B_RED"Stopping server...\n"RESET);
 
+exit_point:
     close(server_fd);
+
+	if (game->map.map) free(game->map.map);
 
 	return 0;
 }

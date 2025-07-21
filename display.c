@@ -20,7 +20,7 @@ int update_display(Game *game){
 		for (size_t x = 1; x < game->display.width - 1; x++) {
 			int map_x = game->player.x + (x - center_x);
 			int map_y = game->player.y + (y - center_y);
-			if (map_x >= 0 && map_x < (int)game->map.w && map_y >= 0 && map_y < (int)game->map.h) {
+			if (map_x >= 0 && map_x < (int)game->map.w && map_y >= 0 && map_y <= (int)game->map.h) {
 				wchar_t *ch = NULL;
 				switch (game->map.map[map_y * game->map.w + map_x]){
 					case ' ':
