@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -pedantic # -fsanitize=address
-LIBS = -pthread -lncurses
+LIBS = -pthread -lncursesw -lm
 
 TARGET = quantum
 BUILD_DIR = build
@@ -10,6 +10,9 @@ SRCS = 	main.c \
 		display.c \
 		chat.c \
 		listes.c \
+		client.c \
+		server.c \
+		utils.c \
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
