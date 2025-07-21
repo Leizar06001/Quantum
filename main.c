@@ -48,8 +48,8 @@ int main(int argc, char **argv){
 		strncpy(game.server_ip, argv[2], sizeof(game.server_ip) - 1);
 		game.server_ip[sizeof(game.server_ip) - 1] = '\0'; //
 	} else {
-		erreur = 1;
-		// server_mode = 1;
+		// erreur = 1;
+		server_mode = 1;
 	}
 
 	if (erreur){

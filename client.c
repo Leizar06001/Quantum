@@ -306,8 +306,12 @@ int main_client(Game *game){
         init_pair(pale_colors[i], pale_colors[i], COLOR_BLACK);
     }
 
-	init_pair(20, 17, 9);	// Opened door
+	init_pair(20, 17, 9);			// Opened door
 	init_pair(21, COLOR_RED, 9);	// Closed door
+
+	init_color(22, 300, 100, 100);	// darker red, wall shades
+	init_pair(22, 22, 9);	// dark walls
+
 
     // Créer une fenêtre
     game->display.main_win = newwin(main_h, main_w, main_y, main_x);

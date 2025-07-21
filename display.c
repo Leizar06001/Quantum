@@ -2,10 +2,19 @@
 #include <wchar.h>
 
 char *empty = " ";
-wchar_t *wall = L"█";
-wchar_t *desk = L"▒";
-wchar_t *vOpenDoor = L"░";
-wchar_t *vClosedDoor = L"▓";
+wchar_t *wall 			= L"█";
+
+wchar_t *desk 			= L"▒";
+
+wchar_t *vOpenDoor 		= L"░";
+
+wchar_t *vClosedDoor 	= L"▓";
+
+wchar_t *lowLcorner 	= L"▙";
+wchar_t *lowRcorner 	= L"◢";
+wchar_t *topBlock		= L"▀";
+wchar_t *botBlock		= L"▄";
+
 
 
 int update_display(Game *game){
@@ -24,13 +33,21 @@ int update_display(Game *game){
 				wchar_t *ch = NULL;
 				switch (game->map.map[map_y * game->map.w + map_x]){
 					case ' ':
-						mvwaddch(game->display.main_win, y, x, ' ');
+						if (game->map.map[(map_y + 1) * game->map.w + map_x] == 'c'){
+							ch = topBlock;
+							wattron(game->display.main_win, COLOR_PAIR(22));
+						} else {
+							mvwaddch(game->display.main_win, y, x, ' ');
+						}
+						
 						break;
 					case '1':
+						wattron(game->display.main_win, COLOR_PAIR(8));
 						ch = wall;
 						break;
 					case '2':
-						ch = desk;
+						wattron(game->display.main_win, COLOR_PAIR(22));
+						ch = wall;
 						break;
 					case 'v':
 						wattron(game->display.main_win, COLOR_PAIR(20));
@@ -41,6 +58,11 @@ int update_display(Game *game){
 						wattron(game->display.main_win, COLOR_PAIR(21));
 						mvwaddwstr(game->display.main_win, y, x, vClosedDoor);
 						wattron(game->display.main_win, COLOR_PAIR(8));
+						break;
+					case 'c':
+						wattron(game->display.main_win, COLOR_PAIR(22));
+						ch = lowLcorner;
+						// ch = botBlock;
 						break;
 				}
 				if (ch) mvwaddwstr(game->display.main_win, y, x, ch); // Dessiner le caractère
