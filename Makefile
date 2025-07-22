@@ -48,6 +48,13 @@ fclean: clean
 	@rm -f $(TARGET)
 
 check-ncurses:
-	@dpkg -s libncurses-dev >/dev/null 2>&1 || \
-	{ echo "📦 ncurses not found, installing..."; \
-	  sudo apt update && sudo apt install -y libncurses5-dev libncursesw5-dev; }
+	@if grep -qE 'Ubuntu|Debian' /etc/os-release; then \
+		if ! dpkg -s libncurses-dev >/dev/null 2>&1; then \
+			echo "📦 Installing libncurses-dev for Debian/Ubuntu..."; \
+			sudo apt update && sudo apt install -y libncurses-dev; \
+		else \
+			echo "✅ libncurses-dev already installed."; \
+		fi \
+	else \
+		echo "⚠️  Not a Debian-based system — skipping ncurses check."; \
+	fi
