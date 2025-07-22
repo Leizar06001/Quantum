@@ -130,7 +130,9 @@ int update_display(Game *game){
 					color = game->clients[i].color;
 				}
 				wattron(game->display.main_win, COLOR_PAIR(color)); // Activer la couleur du client
-				mvwaddch(game->display.main_win, client_y - 1, client_x, '@'); // Dessiner le client
+				if (client_y > 1){
+					mvwaddch(game->display.main_win, client_y - 1, client_x, '@'); // Dessiner le client
+				}
 				mvwaddwstr(game->display.main_win, client_y, client_x, L"|");
 
 				if (t_now - game->clients[i].last_msg < DURATION_MSG_NOTIF){
