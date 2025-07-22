@@ -11,14 +11,18 @@ wchar_t *vOpenDoor 		= L"░";
 wchar_t *vClosedDoor 	= L"▓";
 
 wchar_t *lowLcorner 	= L"▙";
-wchar_t *lowRcorner 	= L"◢";
+wchar_t *lowRcorner 	= L"▟";
+wchar_t *topLcorner 	= L"▛";
+wchar_t *topRcorner 	= L"▜";
+
 wchar_t *topBlock		= L"▀";
 wchar_t *botBlock		= L"▄";
 
 
-
 int update_display(Game *game){
 	if (!game) return -1;
+
+	curs_set(0);
 
 	// The player will always be at the center of the window
 	int center_x = game->display.width / 2;
@@ -29,11 +33,15 @@ int update_display(Game *game){
 		for (size_t x = 1; x < game->display.width - 1; x++) {
 			int map_x = game->player.x + (x - center_x);
 			int map_y = game->player.y + (y - center_y);
+
 			if (map_x >= 0 && map_x < (int)game->map.w && map_y >= 0 && map_y <= (int)game->map.h) {
+				// if (map_y * game->map.w + map_x > game->map.map_len) continue;
+
 				wchar_t *ch = NULL;
 				switch (game->map.map[map_y * game->map.w + map_x]){
 					case ' ':
-						if (game->map.map[(map_y + 1) * game->map.w + map_x] == 'c'){
+						if (game->map.map[(map_y + 1) * game->map.w + map_x] == 'c' || 
+							(game->map.map[(map_y + 1) * game->map.w + map_x] == '1' && game->map.map[(map_y - 1) * game->map.w + map_x] == '2' && (game->map.map[map_y * game->map.w + map_x + 1] == 'v' || game->map.map[map_y * game->map.w + map_x - 1] == 'v'))){
 							ch = topBlock;
 							wattron(game->display.main_win, COLOR_PAIR(22));
 						} else {
@@ -64,6 +72,34 @@ int update_display(Game *game){
 						ch = lowLcorner;
 						// ch = botBlock;
 						break;
+					case 'o':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = topLcorner;
+						break;
+					case 'p':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = topRcorner;
+						break;
+					case 'k':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = lowLcorner;
+						break;
+					case 'l':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = lowRcorner;
+						break;
+					case 'i':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = topBlock;
+						break;
+					case 'j':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = botBlock;
+						break;
+					case 'u':
+						wattron(game->display.main_win, COLOR_PAIR(23));
+						ch = vClosedDoor;
+						break;
 				}
 				if (ch) mvwaddwstr(game->display.main_win, y, x, ch); // Dessiner le caractère
 			} else {
@@ -75,7 +111,8 @@ int update_display(Game *game){
 
 	// Dessiner le joueur au centre de la fenêtre en rouge
 	wattron(game->display.main_win, COLOR_PAIR(game->player.color)); // Activer la couleur du joueur
-	mvwaddch(game->display.main_win, center_y, center_x, '@'); // Dessiner le joueur au centre
+	mvwaddch(game->display.main_win, center_y - 1, center_x, '@'); // Dessiner le joueur au centre
+	mvwaddwstr(game->display.main_win, center_y, center_x, L"|");
 	wattroff(game->display.main_win, COLOR_PAIR(game->player.color)); // Désactiver la couleur
 
 	// // Draw clients
@@ -93,7 +130,8 @@ int update_display(Game *game){
 					color = game->clients[i].color;
 				}
 				wattron(game->display.main_win, COLOR_PAIR(color)); // Activer la couleur du client
-				mvwaddch(game->display.main_win, client_y, client_x, '@'); // Dessiner le client
+				mvwaddch(game->display.main_win, client_y - 1, client_x, '@'); // Dessiner le client
+				mvwaddwstr(game->display.main_win, client_y, client_x, L"|");
 
 				if (t_now - game->clients[i].last_msg < DURATION_MSG_NOTIF){
 					mvwaddch(game->display.main_win, client_y - 1, client_x, '!');
@@ -108,6 +146,8 @@ int update_display(Game *game){
 	wrefresh(game->display.main_win); // Rafraîchir la fenêtre principale
 	// wrefresh(game->display.self_text); // Rafraîchir la fenêtre de texte
 	move_cursor_back(game);
+
+	curs_set(1);
 
 	return 0;
 }

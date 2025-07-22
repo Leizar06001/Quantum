@@ -22,11 +22,6 @@
 #include "terminal_esc_seq.h"
 #include "config.h"
 
-extern const size_t map_w;
-extern const size_t map_h;
-extern const char map_c_empty;
-extern const char map[];
-
 extern atomic_int server_running;
 
 #define PORT 		18467
@@ -122,6 +117,7 @@ typedef struct {
 
 typedef struct {
 	char 	*map; // Carte du jeu
+	size_t	map_len;
 	size_t 	w; // Largeur de la carte
 	size_t 	h; // Hauteur de la carte
 	char map_c_empty; // Caractère représentant un espace vide
@@ -148,6 +144,8 @@ typedef struct {
 	char exit_error[256];
 	int print_error;
 } Game;
+
+#include "map.h"
 
 int main_server(Game *game);
 int main_client(Game *game);

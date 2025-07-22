@@ -234,6 +234,11 @@ int main_client(Game *game){
 	nodelay(stdscr, TRUE);
 	setlocale(LC_ALL, "");
 
+	int w,h;
+	getmaxyx(stdscr, h, w);
+	printf("W: %d, H: %d\n", w, h);
+	usleep(5000000);
+
     int main_y = 5, 	main_x = 2;
     int main_h = 20, 	main_w = 50;
 
@@ -249,32 +254,7 @@ int main_client(Game *game){
 	game->display.height 	= main_h;
 	game->display.width 	= main_w;
 
-	int map_size = strlen(map);
-	game->map.map = (char *)malloc(sizeof(char) * map_size + 1); // Assigner la carte au jeu
-	strcpy(game->map.map, map);
-	
-	int nb_doors = 0;
-	for(int i = 0; i < map_size; i++){
-		if (game->map.map[i] == 'v' || game->map.map[i] == 'h'){
-			game->map.doors[nb_doors].enabled = 1;
-			game->map.doors[nb_doors].y = i / map_w;
-			game->map.doors[nb_doors].x = i % map_w;
-			game->map.doors[nb_doors].state = 0;
-			if (game->map.map[i] == 'v'){
-				game->map.doors[nb_doors].vertical = 1;
-			} else {
-				game->map.doors[nb_doors].vertical = 0;
-			}
-			// game->map.map[i] = map_c_empty;
-			nb_doors++;
-		}
-		if (nb_doors > 20) goto exit_point;
-	}
-	game->map.nb_doors = nb_doors;
-
-	game->map.w = map_w; // Assigner la largeur de la carte
-	game->map.h = map_h; // Assigner la hauteur de la carte
-	game->map.map_c_empty = map_c_empty; // Assigner le caractère vide de la carte
+	if (init_map(game) == -1) goto exit_point;
 
 	init_pair(1, COLOR_CYAN, COLOR_BLACK); // Définir une paire de couleurs
 	init_pair(2, COLOR_RED, COLOR_BLACK);  // Définir une autre paire de couleurs
@@ -311,6 +291,9 @@ int main_client(Game *game){
 
 	init_color(22, 300, 100, 100);	// darker red, wall shades
 	init_pair(22, 22, 9);	// dark walls
+
+	init_color(23, 90*1000/255, 63*1000/255, 40*1000/255);  // Dark brown
+	init_pair(23, 23, 9);	// mobilier
 
 
     // Créer une fenêtre

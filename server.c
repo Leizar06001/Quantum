@@ -247,36 +247,7 @@ void handle_sigint(int sig){
     server_running = 0;
 }
 
-int init_map(Game *game){
-	int map_size = strlen(map);
-	game->map.map = (char *)malloc(sizeof(char) * map_size + 1); // Assigner la carte au jeu
-	strcpy(game->map.map, map);
 
-	int nb_doors = 0;
-	for(int i = 0; i < map_size; i++){
-		if (game->map.map[i] == 'v' || game->map.map[i] == 'h'){
-			game->map.doors[nb_doors].enabled = 1;
-			game->map.doors[nb_doors].y = i / map_w;
-			game->map.doors[nb_doors].x = i % map_w;
-			game->map.doors[nb_doors].state = 0;
-			if (game->map.map[i] == 'v'){
-				game->map.doors[nb_doors].vertical = 1;
-			} else {
-				game->map.doors[nb_doors].vertical = 0;
-			}
-			// game->map.map[i] = map_c_empty;
-			nb_doors++;
-		}
-		if (nb_doors > 20) return -1;
-	}
-	game->map.nb_doors = nb_doors;
-
-	game->map.w = map_w; // Assigner la largeur de la carte
-	game->map.h = map_h; // Assigner la hauteur de la carte
-	game->map.map_c_empty = map_c_empty; // Assigner le caractère vide de la carte
-
-	return 0;
-}
 
 int main_server(Game *game){
 	printf(B_GREEN"\nStarting server...\n"RESET);
