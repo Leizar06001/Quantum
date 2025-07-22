@@ -24,5 +24,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/quantum:latest
-            ghcr.io/${{ github.repository_owner }}/quantum:${{ github.sha }}
+            ghcr.io/${{ lowercase(github.repository_owner) }}/quantum:latest
+            ghcr.io/${{ lowercase(github.repository_owner) }}/quantum:${{ github.sha }}
