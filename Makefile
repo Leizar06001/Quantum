@@ -18,7 +18,7 @@ SRCS = 	main.c \
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-all: $(TARGET)
+all: check-ncurses $(TARGET)
 	@echo "✅ Build completed successfully!"
 	@echo "🚀 You can now launch \033[4;32m./quantum\033[0m"
 
@@ -33,6 +33,9 @@ $(TARGET): $(OBJS)
 	@echo "🔨 Linking $(TARGET) ..."
 	@$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 
+prepare:
+	@echo "\nYou need to get ncurses first : 'sudo apt install libncurses5-dev libncursesw5-dev'\n"
+
 re: fclean all
 
 clean:
@@ -43,3 +46,8 @@ fclean: clean
 	@echo "🧹 Cleaning exe..."
 	@rm -f reccord.txt
 	@rm -f $(TARGET)
+
+check-ncurses:
+	@dpkg -s libncurses-dev >/dev/null 2>&1 || \
+	{ echo "📦 ncurses not found, installing..."; \
+	  sudo apt update && sudo apt install -y libncurses5-dev libncursesw5-dev; }
