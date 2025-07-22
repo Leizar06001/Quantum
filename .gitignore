@@ -2,6 +2,7 @@ build
 .vscode
 cheatsheet.md
 quantum
+val.txt
 
 # Prerequisites
 *.d

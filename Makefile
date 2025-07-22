@@ -56,8 +56,6 @@ ifeq ($(IS_WSL),1)
 	@echo "Ensuring PowerShell execution policy allows toast.ps1"
 	@powershell.exe -Command "if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'RemoteSigned') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }"
 	@if [ ! -f "$(WIN_HOME)/toast.ps1" ]; then \
-		echo "Downloading toast.ps1..."; \
-		curl -sSL https://gist.githubusercontent.com/dend/5ae8a70678e3a35d02ecd39c12f99110/raw -o ./toast.ps1; \
 		cp ./toast.ps1 "$(WIN_HOME)/"; \
 	else \
 		echo "toast.ps1 already exists in Windows home. Skipping download."; \
