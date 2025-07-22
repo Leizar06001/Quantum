@@ -1,0 +1,3 @@
+#!/bin/bash
+win_home=$(powershell.exe '$Env:USERPROFILE' | tr -d '\r')
+powershell.exe "& { . \"${win_home//\\/\\\\}\\toast.ps1\"; Show-Notification -ToastTitle \"$1\" -ToastText \"$2\" }"

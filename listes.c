@@ -54,43 +54,17 @@ int print_messages(Game *game) {
 	Messages *current = game->chat.messages;
 	while (current != NULL) {
 
-		// Check the distance to message origin
-		// double dist = 0;
-		// if (current->player_id > 0){
-		// 	// This uses strait line
-		// 	// dist = distance(game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
-			
-		// 	// This search for shortest dist avoiding walls
-		// 	dist = shortest_distance(game->map.map, game->map.w, game->map.h, game->player.x, game->player.y, game->clients[current->player_id].x, game->clients[current->player_id].y);
-		// }
-		
-		// wprintw(game->display.info, "Dist: %f\n", dist);
-		// wrefresh(game->display.info);
+		if (current->color <= MAX_COLOR){
+			wattron(game->display.chat, COLOR_PAIR(current->color)); // Activer la couleur du message
+		}
+		wprintw(game->display.chat, " %s: %s\n", current->name, current->text_buffer); // Afficher le message
+		if (current->color <= MAX_COLOR){
+			wattroff(game->display.chat, COLOR_PAIR(current->color)); // Désactiver la couleur
+		}
 
-		// if (dist < DIST_NO_HEAR && dist >= 0){
-		// 	if (dist > DIST_NOISE){
-		// 		// some random noise
-		// 		int chances_noise = ((dist - DIST_NOISE) * 100) / (DIST_NO_HEAR - DIST_NOISE);
-		// 		int ic = 0;
-		// 		while (current->text_buffer[ic]){
-		// 			if (rand() % 100 < chances_noise){
-		// 				current->text_buffer[ic] = '.';
-		// 			}
-		// 			ic++;
-		// 		}
-
-		// 	} else {
-		// 		// Hear good
-		// 	}
-
-			if (current->color <= MAX_COLOR){
-				wattron(game->display.chat, COLOR_PAIR(current->color)); // Activer la couleur du message
-			}
-			wprintw(game->display.chat, " %s: %s\n", current->name, current->text_buffer); // Afficher le message
-			if (current->color <= MAX_COLOR){
-				wattroff(game->display.chat, COLOR_PAIR(current->color)); // Désactiver la couleur
-			}
-		// }
+		char notif[512];
+		sprintf(notif, "./notify-send \"%s\" \"%s\"", current->name, current->text_buffer);
+		system(notif);
 
 		Messages *next = current->next; // Sauvegarder le pointeur vers le message suivant
 		free(current); // Libérer la mémoire du message actuel
@@ -101,6 +75,7 @@ int print_messages(Game *game) {
 	game->chat.messages = NULL; // Réinitialiser la liste des messages après affichage
 	
 	if (printed){
+		// system("./notify-send \"Hello from C\" \"This is a test notification\"");
 		pthread_mutex_lock(&game->display.m_display_update);
 		wrefresh(game->display.chat); // Rafraîchir la fenêtre de chat
 		pthread_mutex_unlock(&game->display.m_display_update);

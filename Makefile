@@ -18,7 +18,11 @@ SRCS = 	main.c \
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
-all: check-ncurses $(TARGET)
+IS_WSL := $(shell grep -qi microsoft /proc/version && echo 1 || echo 0)
+WIN_HOME := $(shell wslpath "$$(powershell.exe '$$Env:USERPROFILE' | tr -d '\r')")
+WIN_TOAST := $(WIN_HOME)/toast.ps1
+
+all: check-ncurses get-toast $(TARGET)
 	@echo "✅ Build completed successfully!"
 	@echo "🚀 You can now launch \033[4;32m./quantum\033[0m"
 
@@ -46,6 +50,22 @@ fclean: clean
 	@echo "🧹 Cleaning exe..."
 	@rm -f reccord.txt
 	@rm -f $(TARGET)
+
+get-toast:
+ifeq ($(IS_WSL),1)
+	@echo "Ensuring PowerShell execution policy allows toast.ps1"
+	@powershell.exe -Command "if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'RemoteSigned') { Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }"
+	@if [ ! -f "$(WIN_HOME)/toast.ps1" ]; then \
+		echo "Downloading toast.ps1..."; \
+		curl -sSL https://gist.githubusercontent.com/dend/5ae8a70678e3a35d02ecd39c12f99110/raw -o ./toast.ps1; \
+		cp ./toast.ps1 "$(WIN_HOME)/"; \
+	else \
+		echo "toast.ps1 already exists in Windows home. Skipping download."; \
+	fi
+else
+	@echo "Not running in WSL"
+endif
+
 
 check-ncurses:
 	@if grep -qE 'Ubuntu|Debian' /etc/os-release; then \
