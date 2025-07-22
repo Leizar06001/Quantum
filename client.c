@@ -234,25 +234,6 @@ int main_client(Game *game){
 	nodelay(stdscr, TRUE);
 	setlocale(LC_ALL, "");
 
-	int w,h;
-	getmaxyx(stdscr, h, w);
-	printf("W: %d, H: %d\n", w, h);
-	usleep(5000000);
-
-    int main_y = 5, 	main_x = 2;
-    int main_h = 20, 	main_w = 50;
-
-	int chat_y = main_y;
-	int chat_x = main_x + main_w + 1; // Position de la fenêtre de chat
-	int chat_h = main_h;
-	int chat_w = 50; // Largeur de la fenêtre de chat
-	
-	int txt_y = main_y + main_h;
-	int txt_x = main_x;
-	int txt_h = 4, txt_w = main_w + chat_w + 1;
-
-	game->display.height 	= main_h;
-	game->display.width 	= main_w;
 
 	if (init_map(game) == -1) goto exit_point;
 
@@ -295,6 +276,58 @@ int main_client(Game *game){
 	init_color(23, 90*1000/255, 63*1000/255, 40*1000/255);  // Dark brown
 	init_pair(23, 23, 9);	// mobilier
 
+	int w,h;
+	getmaxyx(stdscr, h, w);
+	printf("W: %d, H: %d\n", w, h);
+	usleep(5000000);
+
+	int main_y, main_x, main_h, main_w;
+	int chat_y, chat_x, chat_h, chat_w;
+	int txt_y, txt_x, txt_h, txt_w;
+
+	if (h > 30 && w > 80){	// normal screen
+		main_y = 5; main_x = 2;
+		main_h = 20;
+		main_w = (w - 5) / 2;
+
+		chat_y = main_y;
+		chat_x = w / 2 + 1;
+		chat_h = main_h;
+		chat_w = main_w;
+
+		txt_y = main_y + main_h;
+		txt_x = main_x;
+		txt_h = 4;
+		txt_w = main_w + chat_w + 1;
+	} else {
+		main_y = 4; main_x = 0;
+		main_h = 20;
+		main_w = w - 30 - 1;
+
+		chat_y = main_y;
+		chat_x = main_x + main_w + 1;
+		chat_h = main_h;
+		chat_w = w - main_w - 1;
+
+		txt_y = main_y + main_h;
+		txt_x = main_x;
+		txt_h = 4;
+		txt_w = main_w + chat_w + 1;
+	}
+
+    // int main_h = 20, 	main_w = 50;
+
+	// int chat_y = main_y;
+	// int chat_x = main_x + main_w + 1; // Position de la fenêtre de chat
+	// int chat_h = main_h;
+	// int chat_w = 50; // Largeur de la fenêtre de chat
+	
+	// int txt_y = main_y + main_h;
+	// int txt_x = main_x;
+	// int txt_h = 4, txt_w = main_w + chat_w + 1;
+
+	game->display.height 	= main_h;
+	game->display.width 	= main_w;
 
     // Créer une fenêtre
     game->display.main_win = newwin(main_h, main_w, main_y, main_x);
