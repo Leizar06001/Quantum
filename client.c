@@ -1,5 +1,4 @@
 #include "includes.h"
-#include "map.h"
 
 void *chat_client_thread(void *arg) {
 	Game *game = (Game *)arg;
@@ -244,10 +243,10 @@ int main_client(Game *game){
 	int chat_w = 50; // Largeur de la fenêtre de chat
 	
 	int txt_y = main_y + main_h;
-	int txt_x = chat_x;
-	int txt_h = 4, txt_w = main_w;
+	int txt_x = main_x;
+	int txt_h = 4, txt_w = main_w + chat_w + 1;
 
-	game->display.height = main_h;
+	game->display.height 	= main_h;
 	game->display.width 	= main_w;
 
 	int map_size = strlen(map);
@@ -307,8 +306,12 @@ int main_client(Game *game){
         init_pair(pale_colors[i], pale_colors[i], COLOR_BLACK);
     }
 
-	init_pair(20, 17, 9);	// Opened door
+	init_pair(20, 17, 9);			// Opened door
 	init_pair(21, COLOR_RED, 9);	// Closed door
+
+	init_color(22, 300, 100, 100);	// darker red, wall shades
+	init_pair(22, 22, 9);	// dark walls
+
 
     // Créer une fenêtre
     game->display.main_win = newwin(main_h, main_w, main_y, main_x);

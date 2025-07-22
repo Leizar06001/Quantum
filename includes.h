@@ -20,6 +20,12 @@
 #include <pthread.h>
 #include <signal.h>
 #include "terminal_esc_seq.h"
+#include "config.h"
+
+extern const size_t map_w;
+extern const size_t map_h;
+extern const char map_c_empty;
+extern const char map[];
 
 extern atomic_int server_running;
 

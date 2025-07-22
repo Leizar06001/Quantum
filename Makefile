@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic # -fsanitize=address
+CFLAGS = -Wall -pedantic -g # -fsanitize=address
 LIBS = -pthread -lncursesw -lm
 
 TARGET = quantum
@@ -13,6 +13,8 @@ SRCS = 	main.c \
 		client.c \
 		server.c \
 		utils.c \
+		config.c \
+		map.c
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 

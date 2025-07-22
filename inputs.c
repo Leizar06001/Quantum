@@ -122,7 +122,7 @@ int get_user_input(Game *game) {
 			// On check si la touche est ascii imprimable
 			if (ch >= 32 && ch <= 126) {
 				// Ajout au tampon de texte
-				if (game->chat.text_size < game->display.width - 4) {
+				if (game->chat.text_size < 97) {
 					game->chat.text_buffer[game->chat.text_size++] = (char)ch; // Ajouter le caractère au tampon
 					game->chat.text_buffer[game->chat.text_size] = '\0'; // Terminer la chaîne
 				}
