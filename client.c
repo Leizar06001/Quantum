@@ -278,8 +278,8 @@ int main_client(Game *game){
 
 	int w,h;
 	getmaxyx(stdscr, h, w);
-	printf("W: %d, H: %d\n", w, h);
-	usleep(5000000);
+	// printf("W: %d, H: %d\n", w, h);
+	// usleep(5000000);
 
 	int main_y, main_x, main_h, main_w;
 	int chat_y, chat_x, chat_h, chat_w;
