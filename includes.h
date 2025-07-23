@@ -37,6 +37,7 @@ extern atomic_int server_running;
 #define IN_KEY_SEND 3
 #define IN_KEY_COLOR 4
 #define IN_KEY_DOOR	5
+#define IN_KEY_NOTIF 6
 
 #define B_NEW_CLIENT 	0x0F
 #define B_CLIENT_INFOS	0x1F
@@ -143,6 +144,7 @@ typedef struct {
 
 	char exit_error[256];
 	int print_error;
+	int notif_enabled;
 } Game;
 
 #include "map.h"

@@ -19,7 +19,11 @@ SRCS = 	main.c \
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
 IS_WSL := $(shell grep -qi microsoft /proc/version && echo 1 || echo 0)
+ifeq ($(IS_WSL),1)
 WIN_HOME := $(shell wslpath "$$(powershell.exe '$$Env:USERPROFILE' | tr -d '\r')")
+else
+WIN_HOME := 
+endif
 WIN_TOAST := $(WIN_HOME)/toast.ps1
 
 all: check-ncurses get-toast $(TARGET)
@@ -74,5 +78,5 @@ check-ncurses:
 			echo "✅ libncurses-dev already installed."; \
 		fi \
 	else \
-		echo "⚠️  Not a Debian-based system — skipping ncurses check."; \
+		echo "⚠️  Not a Debian-based system — make sure you have ncurses-dev installed."; \
 	fi

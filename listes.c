@@ -62,9 +62,11 @@ int print_messages(Game *game) {
 			wattroff(game->display.chat, COLOR_PAIR(current->color)); // Désactiver la couleur
 		}
 
-		char notif[512];
-		sprintf(notif, "./notify-send \"%s\" \"%s\"", current->name, current->text_buffer);
-		system(notif);
+		if (game->notif_enabled){
+			char notif[512];
+			sprintf(notif, "./notify-send \"%s\" \"%s\"", current->name, current->text_buffer);
+			system(notif);
+		}
 
 		Messages *next = current->next; // Sauvegarder le pointeur vers le message suivant
 		free(current); // Libérer la mémoire du message actuel

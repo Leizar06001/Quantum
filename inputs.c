@@ -3,6 +3,7 @@
 
 #define KEY_COLOR_CH 	265	// F1 key for changing color
 #define KEY_CHANGE_DOOR 266	// F2
+#define KEY_TOGGLE_NOTIFS 267	// F3
 #define KEY_QUIT 		27 	// ESC key
 
 int check_for_move(Game *game, int x, int y){
@@ -86,6 +87,14 @@ int get_user_input(Game *game) {
 				}
 			}
 			return IN_KEY_DOOR;
+		
+		case KEY_TOGGLE_NOTIFS:
+			if (game->notif_enabled){
+				game->notif_enabled = 0;
+			} else {
+				game->notif_enabled = 1;
+			}
+			return IN_KEY_NOTIF;
 
 		case KEY_QUIT: // ESC Quitter le jeu 
 			return IN_KEY_EXIT;

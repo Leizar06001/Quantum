@@ -19,6 +19,8 @@ int init_struct(Game *game){
 
 	game->map.map = NULL;
 
+	game->notif_enabled = 1;
+
 	return 0;
 }
 

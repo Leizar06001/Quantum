@@ -154,13 +154,16 @@ int init_player(Player *player) {
 	return 0;
 }
 
+void print_header(Game *game){
+	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Action | [F3] Notifs: %s | [Arrows] Move | [Enter] Send Message", game->notif_enabled ? "ON " : "OFF");
+	refresh();
+}
+
 int game_loop(Game *game) {
 	if (!game) return -1; // Vérification de la validité du pointeur
 
 	update_display(game);
-
-	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Un/lock Doors | [Arrows] Move | [Enter] Send Message");
-	refresh();
+	print_header(game);
 
 	// Boucle de jeu principale
 	int ret = 0;
@@ -202,6 +205,10 @@ int game_loop(Game *game) {
 			case IN_KEY_COLOR:
 			case IN_KEY_DOOR:
 				ask_for_display_update(game);
+				break;
+
+			case IN_KEY_NOTIF:
+				print_header(game);
 				break;
 		}
 
