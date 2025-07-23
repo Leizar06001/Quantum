@@ -7,7 +7,7 @@
 #define KEY_QUIT 		27 	// ESC key
 
 int check_for_move(Game *game, int x, int y){
-	return 0;	// for tests
+	// return 0;	// for tests
 
 	if (game->map.map[y * game->map.w + x] != game->map.map_c_empty && 	// empty
 		game->map.map[y * game->map.w + x] != 'v') {					// opened door

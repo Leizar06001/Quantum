@@ -158,9 +158,12 @@ void draw_map_iso(Game *game){
 	}
 	wattroff(game->display.main_win, COLOR_PAIR(8));
 
-	mvwaddwstr(game->display.main_win, center_y - 2, center_x - 1, L"😒"); 
-	mvwaddch(game->display.main_win, center_y - 1, center_x, '|'); 
-	mvwaddch(game->display.main_win, center_y, center_x, '|'); 
+	mvwaddwstr(game->display.main_win, center_y - 2, center_x, L"😒"); 
+	mvwaddwstr(game->display.main_win, center_y - 1, center_x, L"🦺"); 
+	mvwaddwstr(game->display.main_win, center_y - 0, center_x, L"🦵"); 
+
+	// mvwaddch(game->display.main_win, center_y - 1, center_x, '|'); 
+	// mvwaddch(game->display.main_win, center_y, center_x, '|'); 
 	wrefresh(game->display.main_win);
 }
 
