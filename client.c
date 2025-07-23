@@ -242,7 +242,7 @@ int main_client(Game *game){
 	setlocale(LC_ALL, "");
 
 
-	if (init_map(game) == -1) goto exit_point;
+	if (init_map(game, map) == -1) goto exit_point;
 
 	init_pair(1, COLOR_CYAN, COLOR_BLACK); // Définir une paire de couleurs
 	init_pair(2, COLOR_RED, COLOR_BLACK);  // Définir une autre paire de couleurs

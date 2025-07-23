@@ -5,16 +5,17 @@ LIBS = -pthread -lncursesw -lm
 TARGET = quantum
 BUILD_DIR = build
 
-SRCS = 	main.c \
-		inputs.c \
-		display.c \
-		chat.c \
-		listes.c \
-		client.c \
-		server.c \
-		utils.c \
-		config.c \
-		map.c
+SRCS = 	main.c 		\
+		inputs.c 	\
+		display.c 	\
+		chat.c 		\
+		listes.c 	\
+		client.c 	\
+		server.c 	\
+		utils.c 	\
+		config.c 	\
+		map.c		\
+		test.c		\
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 

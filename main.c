@@ -28,8 +28,18 @@ int main(int argc, char **argv){
 	Game game = {0};
 	init_struct(&game);
 
+	int test_mode = 0;
 	int server_mode = 0;
 	int erreur = 0;
+
+	if (argc > 1 && strcmp("-test", argv[1]) == 0){
+		test_mode = 1;
+	}
+
+	if (test_mode){
+		start_test(&game);
+		return 0;
+	}
 
 	if (argc == 2){
 		if (strcmp("-server", argv[1]) == 0){

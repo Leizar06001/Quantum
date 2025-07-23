@@ -149,6 +149,8 @@ typedef struct {
 
 #include "map.h"
 
+int start_test(Game *game);
+
 int main_server(Game *game);
 int main_client(Game *game);
 

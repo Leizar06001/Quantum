@@ -254,7 +254,7 @@ int main_server(Game *game){
 
 	signal(SIGINT, handle_sigint);
 
-	if (init_map(game) == -1) goto exit_point;
+	if (init_map(game, map) == -1) goto exit_point;
 
 	int server_fd, client_fds[MAX_CLIENTS] = {0};
     struct sockaddr_in addr;
