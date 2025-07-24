@@ -249,7 +249,7 @@ void init_pnjs(Game *game){
 	strcpy(game->clients[MAX_CLIENTS - 1].name, "BOSS");
 	game->clients[MAX_CLIENTS - 1].color 	= 18;
 	game->clients[MAX_CLIENTS - 1].x		= 20;
-	game->clients[MAX_CLIENTS - 1].y		= 78;
+	game->clients[MAX_CLIENTS - 1].y		= 83;
 	game->clients[MAX_CLIENTS - 1].face_id	= 32;
 	game->clients[MAX_CLIENTS - 1].body_id	= 0;
 	game->clients[MAX_CLIENTS - 1].legs_id	= 0;

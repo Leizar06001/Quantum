@@ -1,7 +1,7 @@
 #include "includes.h"
 
 const size_t map_w = 46;
-const size_t map_h = 83;
+const size_t map_h = 88;
 const char map_c_empty = ' ';
 
 const char map_test[] = "\
@@ -176,6 +176,11 @@ const char map[] = "\
 1                                            1\
 1                                            1\
 1                                            1\
+1111111111111111111111111    1               1\
+1                            1               1\
+1                            1               1\
+1                            1               1\
+1                            1               1\
 1111111111111111111111111111111111111111111111\
                                               \
                                               \

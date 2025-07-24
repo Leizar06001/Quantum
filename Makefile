@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic -g # -fsanitize=address
+CFLAGS = -Wall  -g # -fsanitize=address
 LIBS = -pthread -lncursesw -lm
 
 TARGET = quantum
