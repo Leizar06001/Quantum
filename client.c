@@ -161,8 +161,10 @@ void print_header(Game *game){
 int game_loop(Game *game) {
 	if (!game) return -1; // Vérification de la validité du pointeur
 
+	pthread_mutex_lock(&game->display.m_display_update);
 	update_display(game);
 	print_header(game);
+	pthread_mutex_unlock(&game->display.m_display_update);
 
 	// Boucle de jeu principale
 	int ret = 0;
@@ -209,7 +211,9 @@ int game_loop(Game *game) {
 				break;
 
 			case IN_KEY_NOTIF:
+				pthread_mutex_lock(&game->display.m_display_update);
 				print_header(game);
+				pthread_mutex_unlock(&game->display.m_display_update);
 				break;
 		}
 
