@@ -199,7 +199,9 @@ int game_loop(Game *game) {
 			case IN_KEY_SEND:
 				// Effacer la ligne de texte
 				wclear(game->display.self_text);
+				wattron(game->display.self_text, COLOR_PAIR(24));
 				box(game->display.self_text, 0, 0); // Redessiner la bordure
+				wattroff(game->display.self_text, COLOR_PAIR(24));
 				mvwprintw(game->display.self_text, 1, 2, "%s:", game->player.name);
 				wrefresh(game->display.self_text); // Rafraîchir la fenêtre de texte
 				move_cursor_back(game);
@@ -292,7 +294,7 @@ int main_client(Game *game){
 	init_pair(7, COLOR_WHITE, COLOR_BLACK); // Définir une paire de couleurs pour les messages
 
 	init_color(8, 600, 200, 200);	// dark red
-	init_color(9, 90, 90, 90);		// dark gray
+	init_color(9, 70, 70, 70);		// dark gray
 	init_pair(8, 8, 9);				// Map
 
 	init_color(20, 200, 200, 200);		// dark gray
@@ -322,8 +324,12 @@ int main_client(Game *game){
 	init_color(23, 90*1000/255, 63*1000/255, 40*1000/255);  // Dark brown
 	init_pair(23, 23, 9);	// mobilier
 
+	init_color(24, 400, 400, 400);		// dark light gray
+	init_pair(24, 24, COLOR_BLACK);		// dark light borders
+
 	int w,h;
 	getmaxyx(stdscr, h, w);
+	(void)h;
 	// printf("W: %d, H: %d\n", w, h);
 	// usleep(5000000);
 
@@ -331,35 +337,35 @@ int main_client(Game *game){
 	int chat_y, chat_x, chat_h, chat_w;
 	int txt_y, txt_x, txt_h, txt_w;
 
-	if (h > 30 && w > 80){	// normal screen
+	// if (h > 30 && w > 80){	// normal screen
 		main_y = 3; main_x = 2;
 		main_h = 20;
-		main_w = (w - 5) / 2;
+		main_w = min(50, (w - 5) / 2);
 
 		chat_y = main_y;
-		chat_x = w / 2;
+		chat_x = main_w + main_x + 1;
 		chat_h = main_h;
-		chat_w = main_w;
+		chat_w = w - main_w - main_x - 1;
 
 		txt_y = main_y + main_h;
 		txt_x = main_x;
 		txt_h = 4;
 		txt_w = main_w + chat_w + 1;
-	} else {
-		main_y = 4; main_x = 0;
-		main_h = 20;
-		main_w = w - 30 - 1;
+	// } else {
+	// 	main_y = 4; main_x = 0;
+	// 	main_h = 20;
+	// 	main_w = w - 30 - 1;
 
-		chat_y = main_y;
-		chat_x = main_x + main_w + 1;
-		chat_h = main_h;
-		chat_w = w - main_w - 1;
+	// 	chat_y = main_y;
+	// 	chat_x = main_x + main_w + 1;
+	// 	chat_h = main_h;
+	// 	chat_w = w - main_w - 1;
 
-		txt_y = main_y + main_h;
-		txt_x = main_x;
-		txt_h = 4;
-		txt_w = main_w + chat_w + 1;
-	}
+	// 	txt_y = main_y + main_h;
+	// 	txt_x = main_x;
+	// 	txt_h = 4;
+	// 	txt_w = main_w + chat_w + 1;
+	// }
 
     // int main_h = 20, 	main_w = 50;
 
@@ -375,20 +381,28 @@ int main_client(Game *game){
 	game->display.height 	= main_h;
 	game->display.width 	= main_w;
 
+	const int box_color = 24;
+
     // Créer une fenêtre
     game->display.main_win = newwin(main_h, main_w, main_y, main_x);
+	wattron(game->display.main_win, COLOR_PAIR(box_color));
     box(game->display.main_win, 0, 0);             // Dessiner une bordure
+	wattroff(game->display.main_win, COLOR_PAIR(box_color));
 
 	game->display.self_text = newwin(txt_h, txt_w, txt_y, txt_x); // Fenêtre pour les messages
+	wattron(game->display.self_text, COLOR_PAIR(box_color));
 	box(game->display.self_text, 0, 0);
+	wattroff(game->display.self_text, COLOR_PAIR(box_color));
 	mvwprintw(game->display.self_text, 1, 2, "%s:", game->player.name);
 
 	game->display.chat_box = newwin(chat_h, chat_w, chat_y, chat_x); 
+	wattron(game->display.chat_box, COLOR_PAIR(box_color));
 	box(game->display.chat_box, 0, 0);
+	wattroff(game->display.chat_box, COLOR_PAIR(box_color));
 	game->display.chat = derwin(game->display.chat_box, chat_h - 2, chat_w - 2, 1, 1); // Fenêtre pour le chat
 	scrollok(game->display.chat, TRUE); // Permettre le défilement dans la fenêtre de chat
 
-	game->display.info = newwin(10, main_w + chat_w, txt_y + txt_h + 1, main_x); // Fenêtre pour les informations
+	game->display.info = newwin(4, main_w + chat_w, txt_y + txt_h + 1, main_x); // Fenêtre pour les informations
 	scrollok(game->display.info, TRUE);
 	wattron(game->display.info, COLOR_PAIR(9));
     

@@ -184,5 +184,6 @@ uint64_t millis();
 double distance(int x1, int y1, int x2, int y2);
 int shortest_distance(const char *map, int map_w, int map_h,
                       int x_start, int y_start, int x_end, int y_end);
+int min(int a, int b);
 
 #endif

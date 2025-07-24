@@ -14,6 +14,9 @@ double distance(int x1, int y1, int x2, int y2){
     return sqrt(dx * dx + dy * dy);
 }
 
+int min(int a, int b){
+	return (a < b ? a : b);
+}
 
 
 #define MAX_W 256
