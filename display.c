@@ -34,6 +34,29 @@ static int check_wall_type(Game *game, int x, int y){
 	return 0;
 }
 
+void clear_emoji_if_needed(WINDOW *win, int y, int x) {
+    cchar_t cval;
+    wchar_t wc;
+
+    // Check (y, x - 1)
+    if (x > 0 && mvwin_wch(win, y, x - 1, &cval) != ERR) {
+        wc = cval.chars[0];
+        if (wcwidth(wc) == 2) {
+            mvwaddch(win, y, x - 1, ' ');
+            mvwaddch(win, y, x, ' ');
+        }
+    }
+
+    // Else check (y, x)
+    else if (mvwin_wch(win, y, x, &cval) != ERR) {
+        wc = cval.chars[0];
+        if (wcwidth(wc) == 2) {
+            mvwaddch(win, y, x, ' ');
+            mvwaddch(win, y, x + 1, ' ');
+        }
+    }
+}
+
 static const int wall_h = 3;
 static const int small_wall_h = 2;
 
@@ -41,8 +64,8 @@ static void draw_map_iso(Game *game){
 	int center_x = game->display.width / 2;
 	int center_y = game->display.height / 2;
 
-	wattron(game->display.main_win, COLOR_PAIR(8));
 	wattron(game->display.main_win, A_BOLD);
+	wattron(game->display.main_win, COLOR_PAIR(8));
 
 	for (size_t y = 1; y < game->display.height - 1; y++) {
 		for (size_t x = 1; x < game->display.width - 1; x++) {
@@ -59,8 +82,11 @@ static void draw_map_iso(Game *game){
 				int cur_wall_h = wall_h;
 				switch (cur_tile){
 					case ' ':
-						ch = ' ';
-						mvwaddch(game->display.main_win, y, x, ch);
+						// ch = ' ';
+						// mvwaddch(game->display.main_win, y, x, ch);
+						wattron(game->display.main_win, COLOR_PAIR(22));
+						mvwaddwstr(game->display.main_win, y, x, L"╳");
+						wattron(game->display.main_win, COLOR_PAIR(8));
 						break;
 
 					case '1':
@@ -131,9 +157,13 @@ static void draw_map_iso(Game *game){
 	
 
 	int dist_wall = wall_h;
+	int hide_player_body = 0;
+	int hide_player_legs = 0;
+
 
 	// Draw other clients
 	// uint64_t t_now = millis();
+	dist_wall = wall_h;
 	for (int i = 0; i < MAX_CLIENTS; i++) {
 		if (game->clients[i].connected) {
 			// wprintw(game->display.info, "Update client %d\n", i);
@@ -160,13 +190,28 @@ static void draw_map_iso(Game *game){
 						break;
 					}
 				}
-				if (client_y - 2 > 0) mvwaddwstr(game->display.main_win, client_y - 2, client_x, faces[game->clients[i].face_id]); 
-				if (client_y - 1 > 0 && dist_wall > wall_h - 2) mvwaddwstr(game->display.main_win, client_y - 1, client_x, bodies[game->clients[i].body_id]); 
-				if (dist_wall > wall_h - 1) mvwaddwstr(game->display.main_win, client_y - 0, client_x, legs[game->clients[i].legs_id]); 
+				// For drawing, we check its not hidden by walls or not hidden by player
+				if (client_y - 2 > 0) 
+					mvwaddwstr(game->display.main_win, client_y - 2, client_x, faces[game->clients[i].face_id]); 
+				
+				if (client_y - 1 > 0 && dist_wall > wall_h - 2 && !(client_y == center_y - 1 && abs(client_x - center_x) < 2))
+					mvwaddwstr(game->display.main_win, client_y - 1, client_x, bodies[game->clients[i].body_id]); 
+
+				if (dist_wall > wall_h - 1 && !((client_y == center_y - 2 || client_y == center_y - 1) && abs(client_x - center_x) < 2))
+					mvwaddwstr(game->display.main_win, client_y - 0, client_x, legs[game->clients[i].legs_id]); 
+
+				if (client_y == center_y + 1 && abs(client_x - center_x) < 2)
+					hide_player_body = 1;
+					
+				if ((client_y == center_y + 2 || client_y == center_y + 1) && abs(client_x - center_x) < 2) 
+					hide_player_legs = 1;
+
+				wrefresh(game->display.info);
 			}
 		}
 	}
 
+ 
 	// Draw player
 	int cur_wall_h = wall_h;
 	dist_wall = wall_h;
@@ -184,9 +229,13 @@ static void draw_map_iso(Game *game){
 			break;
 		}
 	}
+	// DRAW
 	mvwaddwstr(game->display.main_win, center_y - 2, center_x, faces[game->player.face_id]); 
-	if (dist_wall > cur_wall_h - 2) mvwaddwstr(game->display.main_win, center_y - 1, center_x, bodies[game->player.body_id]); 
-	if (dist_wall > cur_wall_h - 1) mvwaddwstr(game->display.main_win, center_y - 0, center_x, legs[game->player.legs_id]); 
+	if (dist_wall > cur_wall_h - 2 && !hide_player_body) 
+		mvwaddwstr(game->display.main_win, center_y - 1, center_x, bodies[game->player.body_id]); 
+	if (dist_wall > cur_wall_h - 1 && !hide_player_legs) 
+		mvwaddwstr(game->display.main_win, center_y - 0, center_x, legs[game->player.legs_id]);
+
 
 	wattroff(game->display.main_win, COLOR_PAIR(8));
 	wrefresh(game->display.main_win);
