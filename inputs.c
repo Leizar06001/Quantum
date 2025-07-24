@@ -17,7 +17,7 @@ int check_for_move(Game *game, int x, int y){
 
 	for(int i = 1; i < MAX_CLIENTS; i++){
 		if (game->clients[i].connected){
-			if (game->clients[i].x == x && game->clients[i].y == y){
+			if (game->clients[i].y == y && (game->clients[i].x == x || game->clients[i].x + 1 == x || game->clients[i].x - 1 == x)){
 				return -2;
 			}
 		}
@@ -223,6 +223,15 @@ int get_user_input(Game *game) {
 					game->chat.new_door = 1;
 					pthread_mutex_unlock(&game->chat.m_send_text);
 					break;
+				}
+			}
+			for(int i = 0; i < MAX_CLIENTS; i++){
+				if (game->clients[i].connected) {
+					if (abs(game->clients[i].y - game->player.y) < 2 && abs(game->clients[i].x - game->player.x) < 3){
+						if (i == MAX_CLIENTS - 1){
+							add_message(game, game->clients[i].name, game->clients[i].color, "Retourne bosser faignasse !", -1);
+						}
+					}
 				}
 			}
 			return IN_KEY_DOOR;

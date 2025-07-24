@@ -244,6 +244,17 @@ int game_loop(Game *game) {
 	return 0;
 }
 
+void init_pnjs(Game *game){
+	game->clients[MAX_CLIENTS - 1].connected = 2;
+	strcpy(game->clients[MAX_CLIENTS - 1].name, "BOSS");
+	game->clients[MAX_CLIENTS - 1].color 	= 18;
+	game->clients[MAX_CLIENTS - 1].x		= 20;
+	game->clients[MAX_CLIENTS - 1].y		= 78;
+	game->clients[MAX_CLIENTS - 1].face_id	= 32;
+	game->clients[MAX_CLIENTS - 1].body_id	= 0;
+	game->clients[MAX_CLIENTS - 1].legs_id	= 0;
+}
+
 int main_client(Game *game){
 	initscr();              // Démarrer ncurses
     cbreak();               // Lecture caractère par caractère
@@ -256,6 +267,8 @@ int main_client(Game *game){
 	game->player.face_id = read_config_int("face", 0);
 	game->player.body_id = read_config_int("body", 0);
 	game->player.legs_id = read_config_int("legs", 0);
+
+	init_pnjs(game);
 
 	if (init_map(game, map) == -1) goto exit_point;
 
