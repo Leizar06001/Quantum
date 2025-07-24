@@ -229,7 +229,7 @@ int get_user_input(Game *game) {
 				if (game->clients[i].connected) {
 					if (abs(game->clients[i].y - game->player.y) < 2 && abs(game->clients[i].x - game->player.x) < 3){
 						if (i == MAX_CLIENTS - 1){
-							add_message(game, game->clients[i].name, game->clients[i].color, "Retourne bosser faignasse !", -1);
+							add_message(game, game->clients[i].name, game->clients[i].color, "Ne restes pas la trop longtemps, tu vas attraper froid !", -1);
 						}
 					}
 				}
