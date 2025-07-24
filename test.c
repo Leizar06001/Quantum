@@ -1,5 +1,16 @@
 #include "includes.h"
 
+static wchar_t *c_wall_diag_r 	= L"╱";
+// static wchar_t *c_wall_diag_l 	= L"╲";
+// static wchar_t *c_corner_ur 	= L"╭";
+// static wchar_t *c_corner_ul 	= L"╮";
+// static wchar_t *c_corner_dr 	= L"╯";
+// static wchar_t *c_corner_dl 	= L"╰";
+static wchar_t *c_horiz_one 	= L"─";
+static wchar_t *c_horiz_two 	= L"═";
+static wchar_t *c_vert_one 	= L"│";
+// static wchar_t *c_vert_two 	= L"║";
+
 void pinfo(Game *game, const char *fmt, ...){
 	va_list ap;
 
@@ -30,7 +41,7 @@ void draw_map(Game *game){
 						break;
 
 					case '1':
-						ch = '#';
+						ch = '.';
 						break;
 					
 					default:
@@ -47,7 +58,7 @@ void draw_map(Game *game){
 	wrefresh(game->display.chat);
 }
 
-int check_wall_type(Game *game, int x, int y){
+static int check_wall_type(Game *game, int x, int y){
 	Map *mp = &game->map;
 	char *mps = mp->map;
 
@@ -73,9 +84,9 @@ int check_wall_type(Game *game, int x, int y){
 	return 0;
 }
 
-const int wall_h = 4;
+static const int wall_h = 3;
 
-void draw_map_iso(Game *game){
+static void draw_map_iso(Game *game){
 	int center_x = game->display.width / 2;
 	int center_y = game->display.height / 2;
 
@@ -92,7 +103,6 @@ void draw_map_iso(Game *game){
 
 				char ch = 0;
 				int wtype;
-				char rch = 0;
 				switch (game->map.map[map_y * game->map.w + (map_x + map_y)]){
 					case ' ':
 						ch = ' ';
@@ -104,34 +114,48 @@ void draw_map_iso(Game *game){
 
 						switch (wtype){
 							case 0:
-								mvwaddch(game->display.main_win, y, x, '|');
+								mvwaddwstr(game->display.main_win, y, x, c_vert_one);
 								for(int w = 0; w < wall_h; w++){
-									if (y - w > 0) mvwaddch(game->display.main_win, y - w, x, '|');
+									if (y - w > 0) mvwaddwstr(game->display.main_win, y - w, x, c_vert_one);
 								}
 								if (y - wall_h > 0 && map_y - 1 > 0) {
 									if (game->map.map[(map_y - 1) * game->map.w + (map_x + map_y)] == '1'){
-										mvwaddch(game->display.main_win, y - wall_h, x, '/');
+										mvwaddwstr(game->display.main_win, y - wall_h, x, L"╒");
 										continue;
 									}
 								}
-								mvwaddch(game->display.main_win, y - wall_h, x, ',');
+								if (y - wall_h > 0)
+									mvwaddch(game->display.main_win, y - wall_h, x, ',');
 								break;
 
 							case 1:
-								mvwaddch(game->display.main_win, y, x, '_');
+								mvwaddwstr(game->display.main_win, y, x, c_horiz_one);
+								
 								for(int w = 1; w < wall_h; w++){
 									if (y - w > 0) mvwaddch(game->display.main_win, y - w, x, ' ');
 								}
-								rch = (mvwinch(game->display.main_win, y - wall_h, x) & A_CHARTEXT);
-								if (y - wall_h > 0 && rch != '/') mvwaddch(game->display.main_win, y - wall_h, x, '_');
+								// rch = (mvwinch(game->display.main_win, y - wall_h, x) & A_CHARTEXT);
+								// if (y - wall_h > 0 && rch != '/') mvwaddch(game->display.main_win, y - wall_h, x, '_');
+
+								cchar_t wcval;
+								wchar_t wch;
+								mvwin_wch(game->display.main_win, y - wall_h, x, &wcval);
+
+								// Le tableau `wcval.chars` contient les caractères, terminé par L'\0'
+								wch = wcval.chars[0];
+
+								if (y - wall_h > 0 && wch != L'╲') {
+									mvwaddwstr(game->display.main_win, y - wall_h, x, c_horiz_two);
+								}
+
 								break;
 
 							case 2:
-								mvwaddch(game->display.main_win, y, x, '/');
+								mvwaddwstr(game->display.main_win, y, x, c_wall_diag_r);
 								for(int w = 1; w < wall_h; w++){
 									if (y - w > 0) mvwaddch(game->display.main_win, y - w, x, ' ');
 								}
-								if (y - wall_h > 0) mvwaddch(game->display.main_win, y - wall_h, x, '/');
+								if (y - wall_h > 0) mvwaddwstr(game->display.main_win, y - wall_h, x, c_wall_diag_r); //c_wall_diag_r);
 								break;
 
 							// case 3:
@@ -158,9 +182,25 @@ void draw_map_iso(Game *game){
 	}
 	wattroff(game->display.main_win, COLOR_PAIR(8));
 
-	mvwaddwstr(game->display.main_win, center_y - 2, center_x, L"😒"); 
-	mvwaddwstr(game->display.main_win, center_y - 1, center_x, L"🦺"); 
-	mvwaddwstr(game->display.main_win, center_y - 0, center_x, L"🦵"); 
+	int dist_wall = wall_h;
+	for(int i = 0; i < wall_h; i++){
+		// if (game->map.map[(game->player.y + i) * game->map.w + game->player.x + i] == '1'){
+		// 	dist_wall = i;
+		// 	break;
+		// }
+		int off_x = i + 1;
+		int off_y = i;
+		if (game->map.map[(game->player.y + off_y) * game->map.w + game->player.x + off_x] == '1'){
+			mvwaddch(game->display.chat, center_y + off_y, center_x + off_x, 'H');
+			wrefresh(game->display.chat);
+			dist_wall = i;
+			break;
+		}
+	}
+
+	mvwaddwstr(game->display.main_win, center_y - 2, center_x, faces[game->player.face_id]); 
+	if (dist_wall > wall_h - 2) mvwaddwstr(game->display.main_win, center_y - 1, center_x, L"🦺"); 
+	if (dist_wall > wall_h - 1) mvwaddwstr(game->display.main_win, center_y - 0, center_x, L"👖"); 
 
 	// mvwaddch(game->display.main_win, center_y - 1, center_x, '|'); 
 	// mvwaddch(game->display.main_win, center_y, center_x, '|'); 
@@ -217,6 +257,7 @@ int start_test(Game *game){
 			case IN_KEY_EXIT:
 				server_running = 0;
 				break;
+
 			case IN_KEY_MOVE:
 				draw_map(game);
 				draw_map_iso(game);
@@ -230,10 +271,16 @@ int start_test(Game *game){
 					mvwinch(game->display.main_win, center_y, center_x - 1) & A_CHARTEXT
 				);
 				break;
+
+			case IN_KEY_COLOR:
+				game->player.face_id++;
+				if (game->player.face_id > NB_FACES - 1) game->player.face_id = 0;
+				draw_map_iso(game);
+				break;
 		}
 
 
-		usleep(100);
+		usleep(10000);
 	}
 
 	delwin(game->display.main_win);                // Supprimer la fenêtre

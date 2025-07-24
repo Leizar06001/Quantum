@@ -3,6 +3,7 @@ build
 cheatsheet.md
 quantum
 val.txt
+config.txt
 
 # Prerequisites
 *.d

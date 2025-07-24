@@ -74,7 +74,7 @@ int recv_msg(Game *game, const char *msg, int len){
 				break;
 			
 			case B_CLIENT_INFOS:
-				if (msg_len < 7) return -1; // Invalid client info message length
+				if (msg_len < 10) return -1; // Invalid client info message length
 				if (ptr[2] < 0 || ptr[2] >= MAX_CLIENTS) return -1; // Invalid client id
 
 				if (ptr[3] == 1) { // Client connected
@@ -83,8 +83,11 @@ int recv_msg(Game *game, const char *msg, int len){
 					game->clients[id].color = ptr[4]; // Set color
 					game->clients[id].x = ptr[5];
 					game->clients[id].y = ptr[6];
-					memcpy(game->clients[id].name, ptr + 7, msg_len - 7); // Copy name
-					game->clients[id].name[msg_len - 7] = '\0'; // Null-terminate name
+					game->clients[id].face_id = ptr[7];
+					game->clients[id].body_id = ptr[8];
+					game->clients[id].legs_id = ptr[9];
+					memcpy(game->clients[id].name, ptr + 10, msg_len - 10); // Copy name
+					game->clients[id].name[msg_len - 10] = '\0'; // Null-terminate name
 
 					sprintf(tmp_buffer, "%s joined", game->clients[id].name);
 					add_message(game, "[Server]", game->clients[id].color, tmp_buffer, -1); // Add message to chat
@@ -98,10 +101,8 @@ int recv_msg(Game *game, const char *msg, int len){
 					game->clients[id].name[0] = '\0'; // Clear name
 					game->clients[id].color = 0; // Reset color
 				} 
-
-				ask_for_display_update(game);
-
 				pos += msg_len;
+				ask_for_display_update(game);
 				break;
 			
 			case B_DOOR_CHANGE:
@@ -117,10 +118,18 @@ int recv_msg(Game *game, const char *msg, int len){
 						game->map.map[game->map.doors[door_id].y * game->map.w + game->map.doors[door_id].x] = 'v';
 					}
 				}
-
-				ask_for_display_update(game);
-
 				pos += msg_len;
+				ask_for_display_update(game);
+				break;
+
+			case B_PERSO_CHANGE:
+				if (msg_len != L_PERSO_CHANGE) return -1;
+				if (ptr[3] >= NB_FACES || ptr[4] >= NB_BODYS || ptr[5] >= NB_LEGS) break;
+				game->clients[id].face_id = ptr[3];
+				game->clients[id].body_id = ptr[4];
+				game->clients[id].legs_id = ptr[5];
+				pos += msg_len;
+				ask_for_display_update(game);
 				break;
 		}
 	}

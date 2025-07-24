@@ -43,7 +43,7 @@ void *chat_client_thread(void *arg) {
 	game->clients[0].color = 2;
 	strncpy(game->clients[0].name, "Server", sizeof(game->clients[0].name) - 1);
 
-	buf_len = strlen(game->player.name) + 7;
+	buf_len = strlen(game->player.name) + 10;
 	buffer[0] = buf_len;
 	buffer[1] = (char)B_NEW_CLIENT;
 	buffer[2] = 0;	// id
@@ -51,8 +51,11 @@ void *chat_client_thread(void *arg) {
 	buffer[4] = game->player.color;
 	buffer[5] = game->player.x;
 	buffer[6] = game->player.y;
+	buffer[7] = game->player.face_id;
+	buffer[8] = game->player.body_id;
+	buffer[9] = game->player.legs_id;
 
-	strncpy(buffer + 7, game->player.name, sizeof(buffer) - 7);
+	strncpy(buffer + 10, game->player.name, sizeof(buffer) - 10);
 
 	if (send(sockfd, buffer, buf_len, 0) <= 0){
 		close(sockfd); 
@@ -117,6 +120,13 @@ void *chat_client_thread(void *arg) {
 			game->chat.new_door = 0;
 		}
 
+		if (game->chat.new_perso){
+			buf_len = L_PERSO_CHANGE;
+			sprintf(buffer, "%c%c%c%c%c%c", buf_len, (char)B_PERSO_CHANGE, 0, (char)game->player.face_id, (char)game->player.body_id, (char)game->player.legs_id);
+			if (send(sockfd, buffer, buf_len, 0) < 0) { perror("send"); break; }
+			game->chat.new_perso = 0;
+		}
+
 		pthread_mutex_unlock(&game->chat.m_send_text); // Release the mutex if no text to send
 
         // 5. Read from server
@@ -155,7 +165,7 @@ int init_player(Player *player) {
 }
 
 void print_header(Game *game){
-	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Action | [F3] Notifs: %s | [Arrows] Move | [Enter] Send Message", game->notif_enabled ? "ON " : "OFF");
+	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Action | [F3] Notifs: %s | [F4] Menu | [Arrows] Move | [Enter] Send Message", game->notif_enabled ? "ON " : "OFF");
 	refresh();
 }
 
@@ -177,6 +187,8 @@ int game_loop(Game *game) {
 				break;
 
 			case IN_KEY_MOVE:
+				wprintw(game->display.info, "Pos: %d, %d\n", game->player.x, game->player.y);
+				wrefresh(game->display.info);
 				ask_for_display_update(game);
 				break;
 
@@ -241,6 +253,9 @@ int main_client(Game *game){
 	nodelay(stdscr, TRUE);
 	setlocale(LC_ALL, "");
 
+	game->player.face_id = read_config_int("face", 0);
+	game->player.body_id = read_config_int("body", 0);
+	game->player.legs_id = read_config_int("legs", 0);
 
 	if (init_map(game, map) == -1) goto exit_point;
 
@@ -252,8 +267,8 @@ int main_client(Game *game){
 	init_pair(6, COLOR_BLUE, COLOR_BLACK); // Définir une paire de couleurs pour les vies
 	init_pair(7, COLOR_WHITE, COLOR_BLACK); // Définir une paire de couleurs pour les messages
 
-	init_color(8, 400, 200, 200);	// dark red
-	init_color(9, 50, 50, 50);		// dark gray
+	init_color(8, 600, 200, 200);	// dark red
+	init_color(9, 90, 90, 90);		// dark gray
 	init_pair(8, 8, 9);				// Map
 
 	init_color(20, 200, 200, 200);		// dark gray
@@ -293,12 +308,12 @@ int main_client(Game *game){
 	int txt_y, txt_x, txt_h, txt_w;
 
 	if (h > 30 && w > 80){	// normal screen
-		main_y = 5; main_x = 2;
+		main_y = 3; main_x = 2;
 		main_h = 20;
 		main_w = (w - 5) / 2;
 
 		chat_y = main_y;
-		chat_x = w / 2 + 1;
+		chat_x = w / 2;
 		chat_h = main_h;
 		chat_w = main_w;
 

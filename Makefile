@@ -16,6 +16,8 @@ SRCS = 	main.c 		\
 		config.c 	\
 		map.c		\
 		test.c		\
+		globals.c	\
+		file.c		\
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 

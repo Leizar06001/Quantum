@@ -62,7 +62,7 @@ int print_messages(Game *game) {
 			wattroff(game->display.chat, COLOR_PAIR(current->color)); // Désactiver la couleur
 		}
 
-		if (game->notif_enabled){
+		if (game->notif_enabled && current->player_id != -1){
 			char notif[512];
 			sprintf(notif, "./notify-send \"%s\" \"%s\"", current->name, current->text_buffer);
 			system(notif);

@@ -124,9 +124,12 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 			game->clients[id].color = ptr[4];
 			game->clients[id].x		= ptr[5];
 			game->clients[id].y		= ptr[6];
+			game->clients[id].face_id = ptr[7];
+			game->clients[id].body_id = ptr[8];
+			game->clients[id].legs_id = ptr[9];
 
-			int name_len = msg_len - 7;
-			memcpy(game->clients[id].name, ptr + 7, name_len);
+			int name_len = msg_len - 10;
+			memcpy(game->clients[id].name, ptr + 10, name_len);
 			game->clients[id].name[name_len] = '\0'; // Null
 
 			game->clients[id].connected = 1; // Mark as having
@@ -136,28 +139,34 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 			// Send connected clients info to the new client
 			for(int i = 1; i < MAX_CLIENTS; i++) {
 				if (game->clients[i].connected && i != id) {
-					buf_len = 7 + strlen(game->clients[i].name);
-					sprintf(buffer_out, "%c%c%c%c%c%c%c%s", buf_len,
+					buf_len = 10 + strlen(game->clients[i].name);
+					sprintf(buffer_out, "%c%c%c%c%c%c%c%c%c%c%s", buf_len,
 															(char)B_CLIENT_INFOS, 
 															(char)i, 
 															1, 
 															game->clients[i].color, 
 															game->clients[i].x,
 															game->clients[i].y,
+															game->clients[i].face_id,
+															game->clients[i].body_id,
+															game->clients[i].legs_id,
 															game->clients[i].name);
 					send_to_one(fd_client, buffer_out, buf_len);
 				}
 			}
 
 			// Inform other clients
-			buf_len = 7 + strlen(game->clients[id].name);
-			sprintf(buffer_out, "%c%c%c%c%c%c%c%s", buf_len,	
+			buf_len = 10 + strlen(game->clients[id].name);
+			sprintf(buffer_out, "%c%c%c%c%c%c%c%c%c%c%s", buf_len,	
 													(char)B_CLIENT_INFOS, 
 													(char)id, 
 													1, 
 													game->clients[id].color, 
 													game->clients[id].x,
 													game->clients[id].y,
+													game->clients[id].face_id,
+													game->clients[id].body_id,
+													game->clients[id].legs_id,
 													game->clients[id].name);
 
 			send_msg_all(game->com.client_fds, buffer_out, buf_len, fd_client, DONT_SEND_ORIG);
@@ -233,6 +242,21 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 				} else {
 					printf(RED"[Client %d] wrong door: %d\n"RESET, id, door_id);
 				}
+
+				pos += msg_len;
+				break;
+
+			case B_PERSO_CHANGE:
+				if (msg_len != L_PERSO_CHANGE) return -1;
+				if (ptr[3] >= NB_FACES || ptr[4] >= NB_BODYS || ptr[5] >= NB_LEGS) return -1;
+				printf(B_CYAN"[Client %d] Face: %d, Body: %d, Legs: %d\n"RESET, id, ptr[3], ptr[4], ptr[5]);
+				game->clients[id].face_id = ptr[3];
+				game->clients[id].body_id = ptr[4];
+				game->clients[id].legs_id = ptr[5];
+
+				// Send to other clients
+				sprintf(buffer_out, "%c%c%c%c%c%c", L_PERSO_CHANGE, (char)B_PERSO_CHANGE, id, ptr[3], ptr[4], ptr[5]);
+				send_msg_all(game->com.client_fds, buffer_out, L_PERSO_CHANGE, fd_client, DONT_SEND_ORIG);
 
 				pos += msg_len;
 				break;

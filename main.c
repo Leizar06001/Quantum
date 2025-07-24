@@ -24,6 +24,7 @@ int init_struct(Game *game){
 	return 0;
 }
 
+
 int main(int argc, char **argv){
 	Game game = {0};
 	init_struct(&game);

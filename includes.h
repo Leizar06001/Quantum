@@ -21,6 +21,9 @@
 #include <signal.h>
 #include "terminal_esc_seq.h"
 #include "config.h"
+#include <wchar.h>
+#include "globals.h"
+#include "file.h"
 
 extern atomic_int server_running;
 
@@ -38,6 +41,7 @@ extern atomic_int server_running;
 #define IN_KEY_COLOR 4
 #define IN_KEY_DOOR	5
 #define IN_KEY_NOTIF 6
+#define IN_KEY_PERSO 7
 
 #define B_NEW_CLIENT 	0x0F
 #define B_CLIENT_INFOS	0x1F
@@ -47,11 +51,13 @@ extern atomic_int server_running;
 #define B_COLOR			0xE2
 #define B_SERVER_MSG 	0xE3
 #define B_DOOR_CHANGE	0xE4
+#define B_PERSO_CHANGE	0xE5
 
 #define L_CLIENT_INFO	20
 #define L_CLIENT_POS	5
 #define L_CLIENT_COLOR	4
 #define L_DOOR_CHANGE	4
+#define L_PERSO_CHANGE	6
 
 #define SEND_TO_ALL		0
 #define DONT_SEND_ORIG	1
@@ -67,6 +73,9 @@ extern atomic_int server_running;
 typedef struct {
 	int 	x, y; // Position du joueur
 	int 	color;
+	int		face_id;
+	int		body_id;
+	int		legs_id;
 	char 	name[16]; // Nom du joueur
 	int		connected;
 	int		lastx, lasty;
@@ -89,6 +98,7 @@ typedef struct {
 	uint8_t		new_pos;
 	uint8_t		new_color;
 	uint8_t		new_door;
+	uint8_t		new_perso;
 	int			door_change_id;
 	Messages 	*messages; // Liste des messages
 	pthread_mutex_t m_send_text;

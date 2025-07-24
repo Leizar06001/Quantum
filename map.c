@@ -4,7 +4,7 @@ const size_t map_w = 46;
 const size_t map_h = 83;
 const char map_c_empty = ' ';
 
-const char map[] = "\
+const char map_test[] = "\
 1111111111111111111111111111111111111111111111\
 1222222222222222221        1222222222222222221\
 12                1        1                21\
@@ -93,7 +93,7 @@ const char map[] = "\
 ";
 
 
-const char map_test[] = "\
+const char map[] = "\
 1111111111111111111111111111111111111111111111\
 1                 1        1                 1\
 1                 1        1                 1\
