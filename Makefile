@@ -21,6 +21,7 @@ SRCS = 	main.c 		\
 
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 
+IS_DOCKER := $(shell grep -qaE 'docker|containerd' /proc/1/cgroup && echo 1 || [ -f /.dockerenv ] && echo 1 || echo 0)
 IS_WSL := $(shell grep -qi microsoft /proc/version && echo 1 || echo 0)
 ifeq ($(IS_WSL),1)
 WIN_HOME := $(shell wslpath "$$(powershell.exe '$$Env:USERPROFILE' | tr -d '\r')")
@@ -29,7 +30,7 @@ WIN_HOME :=
 endif
 WIN_TOAST := $(WIN_HOME)/toast.ps1
 
-all: check-ncurses get-toast $(TARGET)
+all: check-env $(TARGET)
 	@echo "✅ Build completed successfully!"
 	@echo "🚀 You can now launch \033[4;32m./quantum\033[0m"
 
@@ -44,9 +45,6 @@ $(TARGET): $(OBJS)
 	@echo "🔨 Linking $(TARGET) ..."
 	@$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
 
-prepare:
-	@echo "\nYou need to get ncurses first : 'sudo apt install libncurses5-dev libncursesw5-dev'\n"
-
 re: fclean all
 
 clean:
@@ -57,6 +55,14 @@ fclean: clean
 	@echo "🧹 Cleaning exe..."
 	@rm -f reccord.txt
 	@rm -f $(TARGET)
+
+check-env:
+ifeq ($(IS_DOCKER),1)
+	@echo "🐳 Running in Docker — skipping toast and ncurses checks."
+else
+	@$(MAKE) -s check-ncurses
+	@$(MAKE) -s get-toast
+endif
 
 get-toast:
 ifeq ($(IS_WSL),1)

@@ -151,18 +151,7 @@ void *chat_client_thread(void *arg) {
     return NULL;
 }
 
-int init_player(Player *player) {
-	if (!player) return -1; // Vérification de la validité du pointeur
-	// Get a random position on the map, ensuring it's not a wall
-	srand(time(NULL)); // Initialiser le générateur de nombres aléatoires
-	do {
-		player->x = rand() % (map_w - 2) + 1; // Générer une position aléatoire
-		player->y = rand() % (map_h - 2) + 1; // Générer une position aléatoire
-	} while (map[player->y * map_w + player->x] != map_c_empty); // Assurer que ce n'est pas un mur
-	player->color = rand() % (MAX_COLOR - MIN_COLOR) + MIN_COLOR; // Choisir une couleur aléatoire entre 1 et MAX_COLOR
 
-	return 0;
-}
 
 void print_header(Game *game){
 	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Action | [F3] Notifs: %s | [F4] Menu | [Arrows] Move | [Enter] Send Message", game->notif_enabled ? "ON " : "OFF");
@@ -248,11 +237,35 @@ void init_pnjs(Game *game){
 	game->clients[MAX_CLIENTS - 1].connected = 2;
 	strcpy(game->clients[MAX_CLIENTS - 1].name, "BOSS");
 	game->clients[MAX_CLIENTS - 1].color 	= 18;
-	game->clients[MAX_CLIENTS - 1].x		= 20;
+	game->clients[MAX_CLIENTS - 1].x		= 21;
 	game->clients[MAX_CLIENTS - 1].y		= 83;
 	game->clients[MAX_CLIENTS - 1].face_id	= 32;
 	game->clients[MAX_CLIENTS - 1].body_id	= 0;
 	game->clients[MAX_CLIENTS - 1].legs_id	= 0;
+}
+
+int init_player(Player *player) {
+	if (!player) return -1; // Vérification de la validité du pointeur
+	// Get a random position on the map, ensuring it's not a wall
+	srand(time(NULL)); // Initialiser le générateur de nombres aléatoires
+
+	int xmin = 1;
+	int xmax = map_w - 2;
+	int xrange = (xmax - xmin) / 2 + 1;
+	int ymin = 75, ymax = 80;
+
+	do {
+		player->x = xmin + 2 * (rand() % xrange); 
+		player->y = rand() % (ymax - ymin + 1) + ymin;
+	} while (map[player->y * map_w + player->x] != map_c_empty); // Assurer que ce n'est pas un mur
+
+	player->color = rand() % (MAX_COLOR - MIN_COLOR) + MIN_COLOR; // Choisir une couleur aléatoire entre 1 et MAX_COLOR
+
+	player->face_id = read_config_int("face", 0);
+	player->body_id = read_config_int("body", 0);
+	player->legs_id = read_config_int("legs", 0);
+
+	return 0;
 }
 
 int main_client(Game *game){
@@ -263,12 +276,6 @@ int main_client(Game *game){
 	start_color();          // Activer les couleurs
 	nodelay(stdscr, TRUE);
 	setlocale(LC_ALL, "");
-
-	game->player.face_id = read_config_int("face", 0);
-	game->player.body_id = read_config_int("body", 0);
-	game->player.legs_id = read_config_int("legs", 0);
-
-	init_pnjs(game);
 
 	if (init_map(game, map) == -1) goto exit_point;
 
@@ -388,6 +395,7 @@ int main_client(Game *game){
 	wrefresh(game->display.chat);                 // Afficher la fenêtre de chat
 	wrefresh(game->display.info);                 // Afficher la fenêtre d'informations
 
+	init_pnjs(game);
 	init_player(&game->player);
 
 	wprintw(game->display.info, "You: Name: %s, Color %d, x %d, y %d\n", game->player.name, game->player.color, game->player.x, game->player.y);

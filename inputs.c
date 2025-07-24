@@ -7,11 +7,17 @@
 #define KEY_F4	268
 #define KEY_QUIT 		27 	// ESC key
 
-int check_for_move(Game *game, int x, int y){
+int is_wall(Game *game, char c){
+	if (c == game->map.map_c_empty || c == 'v') return 0;
+	return 1;
+}
+
+int check_for_move(Game *game, int x, int y, int dirx){
 	// return 0;	// for tests
 
-	if (game->map.map[y * game->map.w + x] != game->map.map_c_empty && 	// empty
-		game->map.map[y * game->map.w + x] != 'v') {					// opened door
+	if (is_wall(game, game->map.map[y * game->map.w + x]) ||
+		((dirx == -1 && is_wall(game, game->map.map[y * game->map.w + x + 1])) || 
+			(dirx == 1 && is_wall(game, game->map.map[y * game->map.w + x - 1])))) {					// opened door
 			return -1;
 	}
 
@@ -174,28 +180,28 @@ int get_user_input(Game *game) {
 	switch (ch) {
 		case KEY_UP: // Haut
 			newy--;
-			if (check_for_move(game, newx, newy) == 0){
+			if (check_for_move(game, newx, newy, 0) == 0){
 				game->player.y = newy;
 				moved = 1;
 			}
 			break;
 		case KEY_DOWN: // Bas
 			newy++;
-			if (check_for_move(game, newx, newy) == 0){
+			if (check_for_move(game, newx, newy, 0) == 0){
 				game->player.y = newy;
 				moved = 1;
 			}
 			break;
 		case KEY_LEFT: // Gauche
-			newx--;
-			if (check_for_move(game, newx, newy) == 0){
+			newx-=2;
+			if (check_for_move(game, newx, newy, -1) == 0){
 				game->player.x = newx;
 				moved = 1;
 			}
 			break;
 		case KEY_RIGHT: // Droite
-			newx++;
-			if (check_for_move(game, newx, newy) == 0){
+			newx+=2;
+			if (check_for_move(game, newx, newy, 1) == 0){
 				game->player.x = newx;
 				moved = 1;
 			}

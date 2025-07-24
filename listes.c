@@ -64,7 +64,7 @@ int print_messages(Game *game) {
 
 		if (game->notif_enabled && current->player_id != -1){
 			char notif[512];
-			sprintf(notif, "./notify-send \"%s\" \"%s\"", current->name, current->text_buffer);
+			sprintf(notif, "./notify-send \"%s\" \"%s\" > /dev/null 2>&1", current->name, current->text_buffer);
 			system(notif);
 		}
 
