@@ -1,10 +1,11 @@
 #include "includes.h"
 
 
-#define KEY_COLOR_CH 	265	// F1 key for changing color
-#define KEY_CHANGE_DOOR 266	// F2
-#define KEY_TOGGLE_NOTIFS 267	// F3
+#define KEY_F1 	265	// F1 key for changing color
+#define KEY_F2 	266	// F2
+#define KEY_F3 	267	// F3
 #define KEY_F4	268
+#define KEY_F5	269
 #define KEY_QUIT 		27 	// ESC key
 
 int is_wall(Game *game, char c){
@@ -158,6 +159,7 @@ int menu_character(Game *game){
                 }
             }
         }
+		usleep(10000);
     }
 
     delwin(win);
@@ -165,6 +167,114 @@ int menu_character(Game *game){
 	refresh();
 	
 	return ret;
+}
+
+void show_chat_menu(Game *game){
+	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+	mouseinterval(0);
+
+	// Crée une fenêtre
+    int height = game->display.chat_h - 2;
+	int width = game->display.chat_w - 2;
+	int starty = game->display.chat_y + 1;
+	int startx = game->display.chat_x + 1;
+
+	const int cancel_x = width - 10;
+	const int btns_y = height - 2;
+    WINDOW *win = newwin(height, width, starty, startx);
+    box(win, 0, 0);
+    mvwprintw(win, 1, 4, "Utilisateurs");
+	mvwprintw(win, btns_y, cancel_x, "Fermer");
+	wrefresh(win);
+
+	// Create subwindow for usernames
+    int list_height = height - 2;
+    int list_width  = 20;
+    WINDOW *userwin = derwin(win, list_height, list_width, 2, 0);
+    scrollok(userwin, TRUE);
+
+	// Collect connected usernames
+    const char *usernames[MAX_CLIENTS];
+    int user_count = 0;
+
+    for (int i = 0; i < MAX_CLIENTS; ++i) {
+        if (game->clients[i].connected) {
+            usernames[user_count++] = game->clients[i].name;
+        }
+    }
+
+    int offset = 0;
+    int max_visible = list_height - 2;
+
+    void draw_user_list(int start) {
+        werase(userwin);
+        for (int i = 0; i < max_visible && (start + i) < user_count; ++i) {
+            mvwprintw(userwin, i + 1, 2, "%s", usernames[start + i]);
+        }
+		box(userwin, 0, 0);
+        wrefresh(userwin);
+    }
+
+    draw_user_list(offset);
+    wrefresh(win);
+
+	MEVENT event;
+	int ch;
+    while ((ch = wgetch(stdscr)) != KEY_QUIT) {
+		if (ch == KEY_MOUSE) {
+            if (getmouse(&event) == OK) {
+				// Vérifie si le clic est dans la fenêtre
+                if (wenclose(win, event.y, event.x)) {
+					if (event.bstate & BUTTON4_PRESSED) {
+						ch = KEY_UP;   // Scroll up
+					} else if (event.bstate & BUTTON5_PRESSED) {
+						ch = KEY_DOWN; // Scroll down
+					} else if (event.bstate & BUTTON1_PRESSED) {
+						// Left-click detected
+						int local_y = event.y - starty;
+						int local_x = event.x - startx;
+	
+						if (local_y == btns_y && (local_x > cancel_x)){
+							break;
+						}
+					} else if (event.bstate & BUTTON3_PRESSED) {
+						// Right-click detected
+					}
+				}
+			}
+		}
+
+		switch (ch) {
+            case KEY_UP:
+                if (offset > 0) {
+                    offset--;
+                    draw_user_list(offset);
+                }
+                break;
+            case KEY_DOWN:
+                if (offset + max_visible < user_count) {
+                    offset++;
+                    draw_user_list(offset);
+                }
+                break;
+        }
+		
+		usleep(10000);
+	}
+
+	mousemask(0, NULL);
+	delwin(win);
+	werase(game->display.chat);   // Clear its contents
+	wrefresh(game->display.chat);
+	refresh();
+}
+
+int check_server_not_connected(Game *game){
+	if (game->connected_to_server == 0){
+		add_message(game, "Client", PAIR_RED, "You are not connected to the server", -1);
+		return 1;
+	}
+	return 0;
 }
 
 int get_user_input(Game *game) {
@@ -179,6 +289,7 @@ int get_user_input(Game *game) {
 	int newy = game->player.y;
 	switch (ch) {
 		case KEY_UP: // Haut
+			if (check_server_not_connected(game)) break;
 			newy--;
 			if (check_for_move(game, newx, newy, 0) == 0){
 				game->player.y = newy;
@@ -186,6 +297,7 @@ int get_user_input(Game *game) {
 			}
 			break;
 		case KEY_DOWN: // Bas
+			if (check_server_not_connected(game)) break;
 			newy++;
 			if (check_for_move(game, newx, newy, 0) == 0){
 				game->player.y = newy;
@@ -193,6 +305,7 @@ int get_user_input(Game *game) {
 			}
 			break;
 		case KEY_LEFT: // Gauche
+			if (check_server_not_connected(game)) break;
 			newx-=2;
 			if (check_for_move(game, newx, newy, -1) == 0){
 				game->player.x = newx;
@@ -200,13 +313,15 @@ int get_user_input(Game *game) {
 			}
 			break;
 		case KEY_RIGHT: // Droite
+			if (check_server_not_connected(game)) break;
 			newx+=2;
 			if (check_for_move(game, newx, newy, 1) == 0){
 				game->player.x = newx;
 				moved = 1;
 			}
 			break;
-		case KEY_COLOR_CH: // F1 Changer de couleur
+
+		case KEY_F5: 	// CHANGE TEXT COLOR
 			pthread_mutex_lock(&game->chat.m_send_text);
 			game->player.color++;
 			if (game->player.color > MAX_COLOR) game->player.color = MIN_COLOR;
@@ -214,7 +329,7 @@ int get_user_input(Game *game) {
 			pthread_mutex_unlock(&game->chat.m_send_text);
 			return IN_KEY_COLOR;
 
-		case KEY_CHANGE_DOOR:
+		case KEY_F1:	// ACTION
 			for(int i = 0; i < game->map.nb_doors; i++){
 				if (distance(game->player.x, game->player.y, game->map.doors[i].x, game->map.doors[i].y) <= 1){
 					if (game->map.doors[i].state == 0){
@@ -242,7 +357,7 @@ int get_user_input(Game *game) {
 			}
 			return IN_KEY_DOOR;
 		
-		case KEY_TOGGLE_NOTIFS:
+		case KEY_F4:	// NOTIFS
 			if (game->notif_enabled){
 				game->notif_enabled = 0;
 			} else {
@@ -250,13 +365,17 @@ int get_user_input(Game *game) {
 			}
 			return IN_KEY_NOTIF;
 
-		case KEY_F4:
+		case KEY_F2:	// MENU PERSO
 			if (menu_character(game)) {
 				pthread_mutex_lock(&game->chat.m_send_text);
 				game->chat.new_perso = 1;
 				pthread_mutex_unlock(&game->chat.m_send_text);
 			}
 			return IN_KEY_PERSO;
+
+		case KEY_F3:	// MENU CHAT
+			show_chat_menu(game);
+			break;
 
 		case KEY_QUIT: // ESC Quitter le jeu 
 			return IN_KEY_EXIT;

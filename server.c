@@ -3,6 +3,9 @@
 static char debug_buf[1024];
 static char buffer_out[1024];
 
+unsigned long g_sig_received_time = 0;
+unsigned long delay_restart = 30000;	//ms
+
 int send_to_one(int fd_dest, const char *msg, int len){
 	for(int i = 0; i < len; i++){
 		sprintf(debug_buf + i * 3, "%02X ", (unsigned char)msg[i]); 
@@ -116,7 +119,6 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 		printf(YELLOW"\n>> Client %d, fd:%d : %s\n"RESET, id_client, fd_client, debug_buf);
 		// **********************
 
-
 		if (game->clients[id].connected == 0){
 			if (ptr[1] != (char)B_NEW_CLIENT) return -1; // Client not connected
 			if (msg_len < 8) return -1;
@@ -129,8 +131,33 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 			game->clients[id].legs_id = ptr[9];
 
 			int name_len = msg_len - 10;
-			memcpy(game->clients[id].name, ptr + 10, name_len);
-			game->clients[id].name[name_len] = '\0'; // Null
+			if (name_len > 20) name_len = 20;
+			char requested_name[20];
+			memcpy(requested_name, ptr + 10, name_len);
+			requested_name[name_len] = '\0';
+
+			memcpy(game->clients[id].name, requested_name, name_len);
+			game->clients[id].name[name_len] = '\0'; 
+
+			// Check if another client has the same pseudo
+			int pseudo_already_exists = 0;
+			int pseudo_number = 0;
+			do {
+				pseudo_already_exists = 0;
+				for(int i = 0; i < MAX_CLIENTS; i++){
+					if (game->clients[i].connected){
+						if (strcmp(game->clients[i].name, game->clients[id].name) == 0){
+							pseudo_number++;
+							sprintf(game->clients[id].name, "%s_%d", requested_name, pseudo_number);
+							pseudo_already_exists = 1;
+							printf("Client pseudo changed to %s\n", game->clients[id].name);
+							break;
+						}
+					}
+				}
+			} while (pseudo_already_exists);
+
+			name_len = strlen(game->clients[id].name);
 
 			game->clients[id].connected = 1; // Mark as having
 
@@ -268,15 +295,26 @@ int serv_recv_msg(Game *game, int fd_client, int id_client, const char *msg, int
 
 void handle_sigint(int sig){
     (void)sig;  // unused
+	printf(B_RED"\nSigINT recieved, shutdown now !\n"RESET);
     server_running = 0;
 }
 
+void handle_sigterm(int sig){
+    (void)sig;  // unused
+	printf(B_RED"\nSigTERM recieved, shutdown in %dsec\n"RESET, (int)delay_restart / 1000);
+	g_sig_received_time = millis();
+    // server_running = 0;
+}
 
 
 int main_server(Game *game){
 	printf(B_GREEN"\nStarting server...\n"RESET);
 
 	signal(SIGINT, handle_sigint);
+	signal(SIGTERM, handle_sigterm);
+	signal(SIGPIPE, SIG_IGN);	// ignore signal if pipe closed (client disconnected, error when send)
+
+	int shutdown_msg_sent = 0;
 
 	if (init_map(game, map) == -1) goto exit_point;
 
@@ -344,7 +382,7 @@ int main_server(Game *game){
                     client_fds[i] = new_socket;
 					int id = i + 1;
 
-					printf(B_CYAN"[NEW CONNECTION] ID: %d, FD: %d\n"RESET, id, new_socket);
+					printf(B_CYAN"\n[NEW CONNECTION] ID: %d, FD: %d\n"RESET, id, new_socket);
 
                     added = 1;
 					game->clients[id].connected = 0;
@@ -368,7 +406,7 @@ int main_server(Game *game){
                 if (len <= 0) {
 
 					// Client disconnected
-					printf(B_YELLOW"[DISCONNECTED] ID:%d, FD: %d\n"RESET, id, fd);
+					printf(B_YELLOW"\n[DISCONNECTED] ID:%d, FD: %d\n"RESET, id, fd);
 					
 					int buf_len = strlen(game->clients[id].name) + 7;
 					sprintf(buffer, "%c%c%c%c%c%s", buf_len, (char)B_CLIENT_INFOS, (char)id, 0, game->clients[id].color, game->clients[id].name);
@@ -387,8 +425,23 @@ int main_server(Game *game){
                 }
             }
         }
+
+		if (g_sig_received_time != 0){
+			if (shutdown_msg_sent == 0){
+				char shutdown_msg[128] = {0};
+				sprintf(shutdown_msg, "!! Server restart in %dsec !!", (int)delay_restart / 1000);
+				int msg_len = strlen(shutdown_msg);
+				sprintf(buffer, "%c%c%c%s", msg_len, (char)B_MESSAGE, (char)0, shutdown_msg);
+				send_msg_all(game->com.client_fds, buffer, msg_len, 0, DONT_SEND_ORIG);
+				shutdown_msg_sent = 1;
+			}
+			if (millis() - g_sig_received_time > delay_restart){
+				server_running = 0;
+			}
+		}
+
     }
-	printf(B_RED"Stopping server...\n"RESET);
+	printf(B_RED"Shutdown server...\n"RESET);
 
 exit_point:
     close(server_fd);

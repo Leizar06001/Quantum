@@ -1,5 +1,7 @@
 #include "includes.h"
 
+
+
 void add_message(Game *game, const char *name, const int color, const char *text, int player_id) {
 	if (!game || !name || !text) return; // Vérification de la validité des pointeurs
 
@@ -63,9 +65,7 @@ int print_messages(Game *game) {
 		}
 
 		if (game->notif_enabled && current->player_id != -1){
-			char notif[512];
-			sprintf(notif, "./notify-send \"%s\" \"%s\" > /dev/null 2>&1", current->name, current->text_buffer);
-			system(notif);
+			send_notification(current->name, current->text_buffer);
 		}
 
 		Messages *next = current->next; // Sauvegarder le pointeur vers le message suivant

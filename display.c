@@ -60,12 +60,20 @@ void clear_emoji_if_needed(WINDOW *win, int y, int x) {
 static const int wall_h = 3;
 static const int small_wall_h = 2;
 
+void set_map_color(Game *game, int pair){
+	if (game->connected_to_server){
+		wattron(game->display.main_win, COLOR_PAIR(pair));
+	} else {
+		wattron(game->display.main_win, COLOR_PAIR(9));
+	}
+}
+
 static void draw_map_iso(Game *game){
 	int center_x = game->display.width / 2;
 	int center_y = game->display.height / 2;
 
 	wattron(game->display.main_win, A_BOLD);
-	wattron(game->display.main_win, COLOR_PAIR(8));
+	set_map_color(game, 8);
 
 	for (size_t y = 1; y < game->display.height - 1; y++) {
 		for (size_t x = 1; x < game->display.width - 1; x++) {
@@ -84,9 +92,9 @@ static void draw_map_iso(Game *game){
 					case ' ':
 						// ch = ' ';
 						// mvwaddch(game->display.main_win, y, x, ch);
-						wattron(game->display.main_win, COLOR_PAIR(22));
+						set_map_color(game, 22);
 						mvwaddwstr(game->display.main_win, y, x, L"╳");
-						wattron(game->display.main_win, COLOR_PAIR(8));
+						set_map_color(game, 8);
 						break;
 
 					case '1':

@@ -1,22 +1,25 @@
 #include "includes.h"
 
-void *chat_client_thread(void *arg) {
-	Game *game = (Game *)arg;
-	int sockfd;
-    struct sockaddr_in serv_addr;
+void del_windows(Game *game);
+void create_windows(Game *game);
+void draw_windows(Game *game);
 
-    char buffer[BUFFER_SIZE];
-	char buf_len = 0;
 
-	// mvprintw(40, 0, "Connecting to %s", game->server_ip);
+static char buffer[BUFFER_SIZE];
+static char buf_len = 0;
+
+int connect_to_server(Game *game, int *sockfd){
+	pinfo(game, "Connecting to server at %s...\n", game->server_ip);
+
+	struct sockaddr_in serv_addr;
 
     // 1. Create socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) { 
+    *sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (*sockfd < 0) { 
 		perror("socket"); 
 		strcpy(game->exit_error, "Failed to create socket.");
 		game->print_error = 1; // Set print error flag
-		return NULL; 
+		return -2; 
 	}
 
     serv_addr.sin_family = AF_INET;
@@ -24,19 +27,17 @@ void *chat_client_thread(void *arg) {
 
     if (inet_pton(AF_INET, game->server_ip, &serv_addr.sin_addr) <= 0) {
         perror("inet_pton"); 
-		close(sockfd);
-		strcpy(game->exit_error, "Invalid server IP address.");
+		close(*sockfd);
+		strcpy(game->exit_error, "Invalid server IP address");
 		game->print_error = 1; // Set print error flag
-		return NULL;
+		return -2;
     }
 
     // 2. Connect to server
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        perror("connect"); 
-		close(sockfd); 
-		strcpy(game->exit_error, "Failed to connect to server.");
-		game->print_error = 1; // Set print error flag
-		return NULL;
+    if (connect(*sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+		close(*sockfd); 
+		pinfo(game, "Failed to connect to server: %s\n", strerror(errno));
+		return -1;
     }
 
 	game->clients[0].connected = 0;
@@ -57,12 +58,35 @@ void *chat_client_thread(void *arg) {
 
 	strncpy(buffer + 10, game->player.name, sizeof(buffer) - 10);
 
-	if (send(sockfd, buffer, buf_len, 0) <= 0){
-		close(sockfd); 
-		strcpy(game->exit_error, "Failed to send to server.");
-		game->print_error = 1; // Set print error flag
-		return NULL;
+	if (send(*sockfd, buffer, buf_len, 0) <= 0){
+		close(*sockfd); 
+		// strcpy(game->exit_error, "Failed to send to server.");
+		// game->print_error = 1; // Set print error flag
+		pinfo(game, "Failed to send to server");
+		return -1;
 	}
+
+	pinfo(game, "Connection success !\n");
+
+	return 1;
+}
+
+void *chat_client_thread(void *arg) {
+	Game *game = (Game *)arg;
+	int sockfd;
+
+	for(int i = 0; i < 10; i++){
+		int conn = connect_to_server(game, &sockfd);
+		if (conn == 1){
+			game->connected_to_server = 1;
+			break;
+		} else if (conn == -2){
+			return NULL;
+		}
+		pinfo(game, "Connection failed, retry %d/%d\n", i + 1, 10);
+		usleep(3000000);
+	}
+	if (game->connected_to_server == 0) return NULL;
 
     // 3. Main loop with select()
     while (server_running) {
@@ -133,9 +157,23 @@ void *chat_client_thread(void *arg) {
         if (FD_ISSET(sockfd, &readfds)) {
             int len = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
             if (len <= 0) {
-				strcpy(game->exit_error, "Disconnected from server.");
-				game->print_error = 1; // Set print error flag
-                break;
+				// strcpy(game->exit_error, "Disconnected from server.");
+				// game->print_error = 1; // Set print error flag
+                // break;
+				game->connected_to_server = 0;
+				pinfo(game, "Disconnected from server, trying to reconnect...\n");
+				for(int i = 0; i < 100; i++){
+					int conn = connect_to_server(game, &sockfd);
+					if (conn == 1){
+						game->connected_to_server = 1;
+						break;
+					} else if (conn == -2){
+						return NULL;
+					}
+					pinfo(game, "Connection failed, retry %d/100\n", i + 1);
+					usleep(3000000);
+				}
+				if (game->connected_to_server == 0) return NULL;
             }
             buffer[len] = '\0';
 
@@ -154,8 +192,28 @@ void *chat_client_thread(void *arg) {
 
 
 void print_header(Game *game){
-	mvprintw(0, 0, "[ESC] Exit | [F1] Color | [F2] Action | [F3] Notifs: %s | [F4] Menu | [Arrows] Move | [Enter] Send Message", game->notif_enabled ? "ON " : "OFF");
+	mvprintw(0, 0, "[ESC] Exit | [F1] Action | [F2] Menu Perso | [F3] Menu Chat [F4] Notifs: %s | [Arrows] Move", game->notif_enabled ? "ON " : "OFF");
 	refresh();
+}
+
+void check_terminal_resize(Game *game){
+	int w,h;
+	getmaxyx(stdscr, h, w);
+
+	if (w != game->display.term_w || h != game->display.term_h){
+		pthread_mutex_lock(&game->display.m_display_update);
+		pthread_mutex_lock(&game->chat.m_chat_box);
+
+		del_windows(game);
+		clear();
+		create_windows(game);
+		draw_windows(game);
+		print_header(game);
+		refresh();
+
+		pthread_mutex_unlock(&game->chat.m_chat_box);
+		pthread_mutex_unlock(&game->display.m_display_update);
+	}
 }
 
 int game_loop(Game *game) {
@@ -170,6 +228,9 @@ int game_loop(Game *game) {
 	int ret = 0;
 	size_t len = 0;
 	while (server_running) {
+		
+		check_terminal_resize(game);
+
 		ret = get_user_input(game); // Obtenir l'entrée de l'utilisateur
 
 		switch (ret){
@@ -178,8 +239,7 @@ int game_loop(Game *game) {
 				break;
 
 			case IN_KEY_MOVE:
-				wprintw(game->display.info, "Pos: %d, %d\n", game->player.x, game->player.y);
-				wrefresh(game->display.info);
+				pinfo(game, "Pos: %d, %d\n", game->player.x, game->player.y);
 				ask_for_display_update(game);
 				break;
 
@@ -274,6 +334,76 @@ int init_player(Player *player) {
 	return 0;
 }
 
+void del_windows(Game *game){
+	delwin(game->display.main_win);
+	delwin(game->display.self_text);
+	delwin(game->display.chat_box);
+	delwin(game->display.info);
+}
+
+void create_windows(Game *game){
+	int w,h;
+	getmaxyx(stdscr, h, w);
+	(void)h;
+
+	game->display.term_h = h;
+	game->display.term_w = w;
+
+	int main_y, main_x, main_h, main_w;
+	int txt_y, txt_x, txt_h, txt_w;
+
+	main_y = 3; main_x = 2;
+	main_h = 20;
+	main_w = min(50, (w - 5) / 2);
+
+	game->display.chat_y = main_y;
+	game->display.chat_x = main_w + main_x + 1;
+	game->display.chat_h = main_h;
+	game->display.chat_w = w - main_w - main_x - 1;
+
+	txt_y = main_y + main_h;
+	txt_x = main_x;
+	txt_h = 4;
+	txt_w = main_w + game->display.chat_w + 1;
+
+	game->display.height 	= main_h;
+	game->display.width 	= main_w;
+
+    // Créer une fenêtre
+    game->display.main_win 	= newwin(main_h, main_w, main_y, main_x);
+	game->display.self_text = newwin(txt_h, txt_w, txt_y, txt_x); // Fenêtre pour les messages
+	game->display.chat_box 	= newwin(game->display.chat_h, game->display.chat_w, game->display.chat_y, game->display.chat_x); 
+	game->display.chat 		= derwin(game->display.chat_box, game->display.chat_h - 2, game->display.chat_w - 2, 1, 1);
+	scrollok(game->display.chat, TRUE);
+	game->display.info 		= newwin(4, main_w + game->display.chat_w, txt_y + txt_h + 1, main_x); // Fenêtre pour les informations
+	scrollok(game->display.info, TRUE);
+	wattron(game->display.info, COLOR_PAIR(9));
+}
+
+void draw_windows(Game *game){
+	const int box_color = 24;
+
+	wattron(game->display.main_win, COLOR_PAIR(box_color));
+    box(game->display.main_win, 0, 0);
+	wattroff(game->display.main_win, COLOR_PAIR(box_color));
+
+	wattron(game->display.self_text, COLOR_PAIR(box_color));
+	box(game->display.self_text, 0, 0);
+	wattroff(game->display.self_text, COLOR_PAIR(box_color));
+	mvwprintw(game->display.self_text, 1, 2, "%s:", game->player.name);
+
+	wattron(game->display.chat_box, COLOR_PAIR(box_color));
+	box(game->display.chat_box, 0, 0);
+	wattroff(game->display.chat_box, COLOR_PAIR(box_color));
+
+	refresh();                 // Rafraîchir l'écran principal
+    wrefresh(game->display.main_win);              // Afficher la fenêtre
+	wrefresh(game->display.self_text);             // Afficher la fenêtre de texte
+	wrefresh(game->display.chat_box);
+	wrefresh(game->display.chat);                 // Afficher la fenêtre de chat
+	wrefresh(game->display.info);                 // Afficher la fenêtre d'informations
+}
+
 int main_client(Game *game){
 	initscr();              // Démarrer ncurses
     cbreak();               // Lecture caractère par caractère
@@ -327,101 +457,20 @@ int main_client(Game *game){
 	init_color(24, 400, 400, 400);		// dark light gray
 	init_pair(24, 24, COLOR_BLACK);		// dark light borders
 
-	int w,h;
-	getmaxyx(stdscr, h, w);
-	(void)h;
-	// printf("W: %d, H: %d\n", w, h);
-	// usleep(5000000);
 
-	int main_y, main_x, main_h, main_w;
-	int chat_y, chat_x, chat_h, chat_w;
-	int txt_y, txt_x, txt_h, txt_w;
-
-	// if (h > 30 && w > 80){	// normal screen
-		main_y = 3; main_x = 2;
-		main_h = 20;
-		main_w = min(50, (w - 5) / 2);
-
-		chat_y = main_y;
-		chat_x = main_w + main_x + 1;
-		chat_h = main_h;
-		chat_w = w - main_w - main_x - 1;
-
-		txt_y = main_y + main_h;
-		txt_x = main_x;
-		txt_h = 4;
-		txt_w = main_w + chat_w + 1;
-	// } else {
-	// 	main_y = 4; main_x = 0;
-	// 	main_h = 20;
-	// 	main_w = w - 30 - 1;
-
-	// 	chat_y = main_y;
-	// 	chat_x = main_x + main_w + 1;
-	// 	chat_h = main_h;
-	// 	chat_w = w - main_w - 1;
-
-	// 	txt_y = main_y + main_h;
-	// 	txt_x = main_x;
-	// 	txt_h = 4;
-	// 	txt_w = main_w + chat_w + 1;
-	// }
-
-    // int main_h = 20, 	main_w = 50;
-
-	// int chat_y = main_y;
-	// int chat_x = main_x + main_w + 1; // Position de la fenêtre de chat
-	// int chat_h = main_h;
-	// int chat_w = 50; // Largeur de la fenêtre de chat
+	// WINDOWS 
+	create_windows(game);
+	pthread_mutex_lock(&game->display.m_display_update);
+	draw_windows(game);
+	pthread_mutex_unlock(&game->display.m_display_update);
 	
-	// int txt_y = main_y + main_h;
-	// int txt_x = main_x;
-	// int txt_h = 4, txt_w = main_w + chat_w + 1;
-
-	game->display.height 	= main_h;
-	game->display.width 	= main_w;
-
-	const int box_color = 24;
-
-    // Créer une fenêtre
-    game->display.main_win = newwin(main_h, main_w, main_y, main_x);
-	wattron(game->display.main_win, COLOR_PAIR(box_color));
-    box(game->display.main_win, 0, 0);             // Dessiner une bordure
-	wattroff(game->display.main_win, COLOR_PAIR(box_color));
-
-	game->display.self_text = newwin(txt_h, txt_w, txt_y, txt_x); // Fenêtre pour les messages
-	wattron(game->display.self_text, COLOR_PAIR(box_color));
-	box(game->display.self_text, 0, 0);
-	wattroff(game->display.self_text, COLOR_PAIR(box_color));
-	mvwprintw(game->display.self_text, 1, 2, "%s:", game->player.name);
-
-	game->display.chat_box = newwin(chat_h, chat_w, chat_y, chat_x); 
-	wattron(game->display.chat_box, COLOR_PAIR(box_color));
-	box(game->display.chat_box, 0, 0);
-	wattroff(game->display.chat_box, COLOR_PAIR(box_color));
-	game->display.chat = derwin(game->display.chat_box, chat_h - 2, chat_w - 2, 1, 1); // Fenêtre pour le chat
-	scrollok(game->display.chat, TRUE); // Permettre le défilement dans la fenêtre de chat
-
-	game->display.info = newwin(4, main_w + chat_w, txt_y + txt_h + 1, main_x); // Fenêtre pour les informations
-	scrollok(game->display.info, TRUE);
-	wattron(game->display.info, COLOR_PAIR(9));
-    
-	refresh();                 // Rafraîchir l'écran principal
-    wrefresh(game->display.main_win);              // Afficher la fenêtre
-	wrefresh(game->display.self_text);             // Afficher la fenêtre de texte
-	wrefresh(game->display.chat_box);
-	wrefresh(game->display.chat);                 // Afficher la fenêtre de chat
-	wrefresh(game->display.info);                 // Afficher la fenêtre d'informations
-
+	// CHARACTERS
 	init_pnjs(game);
 	init_player(&game->player);
 
-	wprintw(game->display.info, "You: Name: %s, Color %d, x %d, y %d\n", game->player.name, game->player.color, game->player.x, game->player.y);
+	pinfo(game, "You: Name: %s, Color %d, x %d, y %d\n", game->player.name, game->player.color, game->player.x, game->player.y);
 
 	pthread_t com_tid;
-
-	mvprintw(0, 0, "Connecting to chat server at %s...", game->server_ip);
-	refresh(); // Rafraîchir l'écran principal
 	if (pthread_create(&com_tid, NULL, chat_client_thread, game) != 0) {
 		perror("pthread_create");
 		return 1;

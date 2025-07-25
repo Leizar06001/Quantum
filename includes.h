@@ -65,10 +65,19 @@ extern atomic_int server_running;
 #define MIN_COLOR 10
 #define MAX_COLOR 19
 
-#define DIST_NOISE		10	// When messages start to cramble
-#define DIST_NO_HEAR	20	// When you dont hear anything
+#define DIST_NOISE		15	// When messages start to cramble
+#define DIST_NO_HEAR	25	// When you dont hear anything
 
 #define MAX_DOORS	20
+
+#define PAIR_CYAN 		1
+#define PAIR_RED		2
+#define PAIR_GREEN		3
+#define PAIR_YELLOW		4
+#define PAIR_MAGENTA 	5
+#define PAIR_BLUE		6
+#define PAIR_WHITE		7
+
 
 typedef struct {
 	int 	x, y; // Position du joueur
@@ -76,14 +85,14 @@ typedef struct {
 	int		face_id;
 	int		body_id;
 	int		legs_id;
-	char 	name[16]; // Nom du joueur
+	char 	name[32]; // Nom du joueur
 	int		connected;
 	int		lastx, lasty;
 	uint64_t last_msg;
 } Player;
 
 typedef struct s_messages {
-	char 	name[16]; 			// Nom du joueur
+	char 	name[32]; 			// Nom du joueur
 	int 	color; 			// Couleur du joueur (0-5)
 	char 	text_buffer[256]; 	// Tampon pour le texte
 	int		player_id;
@@ -113,9 +122,12 @@ typedef struct {
 	WINDOW *info;
 	size_t height;  // Hauteur de l'affichage
 	size_t width;   // Largeur de l'affichage
+	size_t	term_h;
+	size_t	term_w;
 	int 			need_main_update;
 	pthread_mutex_t m_display_update;
 	uint64_t	t_next_update;
+	int chat_x, chat_y, chat_w, chat_h;
 } Display;
 
 typedef struct {
@@ -155,6 +167,7 @@ typedef struct {
 	char exit_error[256];
 	int print_error;
 	int notif_enabled;
+	int connected_to_server;
 } Game;
 
 #include "map.h"
@@ -185,5 +198,7 @@ double distance(int x1, int y1, int x2, int y2);
 int shortest_distance(const char *map, int map_w, int map_h,
                       int x_start, int y_start, int x_end, int y_end);
 int min(int a, int b);
+void pinfo(Game *game, const char *fmt, ...);
+void send_notification(const char *title, const char *message);
 
 #endif

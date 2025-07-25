@@ -1,6 +1,9 @@
 #include "includes.h"
 #include <time.h>
 #include <math.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 uint64_t millis(){
     struct timespec ts;
@@ -16,6 +19,18 @@ double distance(int x1, int y1, int x2, int y2){
 
 int min(int a, int b){
 	return (a < b ? a : b);
+}
+
+void pinfo(Game *game, const char *fmt, ...){
+	va_list ap;
+
+	pthread_mutex_lock(&game->display.m_display_update);
+	va_start(ap, fmt);
+    vw_printw(game->display.info, fmt, ap); // write to ncurses window
+    va_end(ap);
+	pthread_mutex_unlock(&game->display.m_display_update);
+
+	wrefresh(game->display.info); 
 }
 
 
@@ -67,4 +82,28 @@ int shortest_distance(const char *map, int map_w, int map_h,
     }
 
     return -1; // no path found
+}
+
+void send_notification(const char *title, const char *message) {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // In child process
+
+        // Redirect stdout and stderr to /dev/null
+        int devnull = open("/dev/null", O_WRONLY);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+
+        // Replace process image with notify-send
+        execlp("notify-send", "notify-send", title, message, (char *)NULL);
+
+        // If execlp fails, just return — child will exit naturally
+        return;
+    }
+
+    // In parent process: do nothing
 }

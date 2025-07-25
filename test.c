@@ -11,16 +11,6 @@ static wchar_t *c_horiz_two 	= L"═";
 static wchar_t *c_vert_one 	= L"│";
 // static wchar_t *c_vert_two 	= L"║";
 
-void pinfo(Game *game, const char *fmt, ...){
-	va_list ap;
-
-	va_start(ap, fmt);
-    vw_printw(game->display.info, fmt, ap); // write to ncurses window
-    va_end(ap);
-
-	wrefresh(game->display.info); 
-}
-
 void draw_map(Game *game){
 	int center_x = game->display.width / 2;
 	int center_y = game->display.height / 2;
