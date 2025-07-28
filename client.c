@@ -192,7 +192,7 @@ void *chat_client_thread(void *arg) {
 
 
 void print_header(Game *game){
-	mvprintw(0, 0, "[ESC] Exit | [F1] Action | [F2] Menu Perso | [F3] Menu Chat [F4] Notifs: %s | [Arrows] Move", game->notif_enabled ? "ON " : "OFF");
+	mvprintw(0, 0, "[ESC] Exit | [F1] Action | [F2] Menu Perso | [F3] Menu Chat | [F4] Notifs: %s | [Arrows] Move", game->notif_enabled ? "ON " : "OFF");
 	refresh();
 }
 

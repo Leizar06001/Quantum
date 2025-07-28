@@ -4,6 +4,7 @@
 - Portes & Distances de chat
 - Objets deplacables
 - Gerer les dquotes
+- Gerer affichage emoji other players
 
 ## En cours
 - Pas 2 meme pseudos (reste a notif le client de son changement de nom)
