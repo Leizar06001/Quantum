@@ -181,7 +181,7 @@ void *chat_client_thread(void *arg) {
 
 			recv_msg(game, buffer, len); // Process received message
         }
-		usleep(200);
+		usleep(2000);
     }
 	server_running = 0;
 
@@ -506,15 +506,13 @@ int start_screen(Game *game){
 	} else strcpy(txts[2], "18467");
 
 
-	char txt[] = "* QUANTUM *";
+	char txt[]  = "* QUANTUM *";
 	int title_w = strlen(txt);
 	int title_x = (menu_w - title_w) / 2;
 	int title_y = 2;
-	// wattron(conn_win, A_BLINK);
 	wattron(conn_win, COLOR_PAIR(13));
 	mvwprintw(conn_win, title_y, title_x, "%s", txt);
 	wattroff(conn_win, COLOR_PAIR(13));
-	// wattroff(conn_win, A_BLINK);
 	for(int i = 0; i < NB_FIELDS; i++){
 		pos[i] = strlen(txts[i]);
 		mvwprintw(conn_win, 5 + (i * 2), 4, "%s", labels[i]);
@@ -526,11 +524,10 @@ int start_screen(Game *game){
 	refresh();
 	wrefresh(conn_win);
 
-	char anim[] = "~`.*..*.~'";
-	// char anim[] = "0123456789";
-	int anim_len = strlen(anim);
-	int anim_n = 0;
-	int cnt = 0;
+	char anim[] 	= "~`.*..*.~'";
+	int anim_len 	= strlen(anim);
+	int anim_n 		= 0;
+	int cnt 		= 0;
 
 	int win = 0;
 	int ch = 0;
