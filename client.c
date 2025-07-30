@@ -23,7 +23,7 @@ int connect_to_server(Game *game, int *sockfd){
 	}
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(game->server_port);
 
     if (inet_pton(AF_INET, game->server_ip, &serv_addr.sin_addr) <= 0) {
         perror("inet_pton"); 
@@ -407,6 +407,216 @@ void draw_windows(Game *game){
 	wrefresh(game->display.info);                 // Afficher la fenêtre d'informations
 }
 
+
+#define NB_FIELDS 3
+#define FIELD_LEN 20
+int check_fields(char txts[][FIELD_LEN]){
+	char tmp_ip[16];
+	for(int i = 0; i < NB_FIELDS; i++){
+		int len = strlen(txts[i]);
+		if (i == 0){
+			if (len < 3 || len > 20) return 0;
+		} else if (i == 1){
+			if (inet_pton(AF_INET, txts[i], &tmp_ip) <= 0) return 0;
+		} else if (i == 2){
+			if (len < 2 || len > 5) return 0;
+			for(int c = 0; c < len; c++){
+				if (txts[i][c] < '0' || txts[i][c] > '9'){
+					return 0;
+				}
+			}
+		}
+	}
+	return 1;
+}
+void show_txt_start_screen(WINDOW **wins, char txts[][FIELD_LEN], int cur_win){
+	char tmp_ip[16];
+
+	int is_valid = 1;
+	int len = strlen(txts[cur_win]);
+
+	if (cur_win == 0){
+		if (len < 3 || len > 20) is_valid = 0;
+	} else if (cur_win == 1){
+		if (inet_pton(AF_INET, txts[cur_win], &tmp_ip) <= 0) is_valid = 0;
+	} else if (cur_win == 2){
+		if (len < 2 || len > 5) is_valid = 0;
+		for(int c = 0; c < len; c++){
+			if (txts[cur_win][c] < '0' || txts[cur_win][c] > '9'){
+				is_valid = 0;
+				break;
+			}
+		}
+	}
+
+	if (is_valid) {
+		wattroff(wins[cur_win], COLOR_PAIR(25));
+	} else {
+		wattron(wins[cur_win], COLOR_PAIR(25));
+	}
+
+	wclear(wins[cur_win]);
+	wprintw(wins[cur_win], "%s", txts[cur_win]);
+	
+}
+int start_screen(Game *game){
+	int w,h;
+	getmaxyx(stdscr, h, w);
+
+	int in_x = 18;
+	int in_w = 20;
+	int menu_w = in_x + in_w + 8;
+	int menu_h = NB_FIELDS * 2 + 8;
+	WINDOW *conn_win 	= newwin(menu_h, menu_w, (h - menu_h) / 2, (w - menu_w) / 2);
+	WINDOW *pseudo_win	= derwin(conn_win, 1, in_w, 5, in_x);
+	WINDOW *ip_win		= derwin(conn_win, 1, in_w, 7, in_x);
+	WINDOW *port_win	= derwin(conn_win, 1, in_w, 9, in_x);
+	wattron(conn_win, COLOR_PAIR(8));
+	box(conn_win, 0, 0);
+	wattroff(conn_win, COLOR_PAIR(8));
+
+	WINDOW *wins[NB_FIELDS] = {pseudo_win, ip_win, port_win};
+	char txts[NB_FIELDS][FIELD_LEN];
+	int pos[NB_FIELDS];
+	char labels[NB_FIELDS][20] = {
+		"Pseudo     :",
+		"Serveur ip :",
+		"Port       :"
+	};
+
+	char *file_txt = read_config_str("pseudo");
+	if (file_txt){
+		strcpy(txts[0], file_txt);
+		free(file_txt);
+		file_txt = NULL;
+	} else strcpy(txts[0], "MyPseudo");
+
+	file_txt = read_config_str("ip");
+	if (file_txt){
+		strcpy(txts[1], file_txt);
+		free(file_txt);
+		file_txt = NULL;
+	} else strcpy(txts[1], "127.0.0.1");
+
+	file_txt = read_config_str("port");
+	if (file_txt){
+		strcpy(txts[2], file_txt);
+		free(file_txt);
+		file_txt = NULL;
+	} else strcpy(txts[2], "18467");
+
+
+	char txt[] = "* QUANTUM *";
+	int title_w = strlen(txt);
+	int title_x = (menu_w - title_w) / 2;
+	int title_y = 2;
+	// wattron(conn_win, A_BLINK);
+	wattron(conn_win, COLOR_PAIR(13));
+	mvwprintw(conn_win, title_y, title_x, "%s", txt);
+	wattroff(conn_win, COLOR_PAIR(13));
+	// wattroff(conn_win, A_BLINK);
+	for(int i = 0; i < NB_FIELDS; i++){
+		pos[i] = strlen(txts[i]);
+		mvwprintw(conn_win, 5 + (i * 2), 4, "%s", labels[i]);
+		wprintw(wins[i], "%s", txts[i]);
+	}
+	char txt_bot[] = "[Entree] pour valider";
+	mvwprintw(conn_win, menu_h - 2, (menu_w - strlen(txt_bot)) / 2, "%s", txt_bot);
+
+	refresh();
+	wrefresh(conn_win);
+
+	char anim[] = "~`.*..*.~'";
+	// char anim[] = "0123456789";
+	int anim_len = strlen(anim);
+	int anim_n = 0;
+	int cnt = 0;
+
+	int win = 0;
+	int ch = 0;
+	do {
+		ch = getch();
+
+		switch (ch){
+			case KEY_UP: // Haut
+				win--;
+				if (win < 0) win = NB_FIELDS - 1;
+				wmove(wins[win], 0, pos[win]);
+				break;
+
+			case KEY_DOWN: // Bas
+				win++;
+				if (win >= NB_FIELDS) win = 0;
+				wmove(wins[win], 0, pos[win]);
+				break;
+
+			case KEY_BACKSPACE:
+				if (pos[win] > 0){
+					pos[win]--;
+					txts[win][pos[win]] = '\0';
+					mvwprintw(wins[win], 0, pos[win], " ");
+					wmove(wins[win], 0, pos[win]);
+
+					show_txt_start_screen(wins, txts, win);
+				}
+				break;
+
+			case 27:	// ESC
+				return -1;
+			
+			default:
+				// On check si la touche est ascii imprimable
+				if (ch >= 32 && ch <= 126) {
+					if (pos[win] < sizeof(txts[win])){
+						txts[win][pos[win]] = ch;
+						txts[win][pos[win] + 1] = '\0';
+						mvwprintw(wins[win], 0, pos[win], "%c", ch);
+						pos[win]++;
+
+						show_txt_start_screen(wins, txts, win);
+					}
+					
+				}
+				break;
+
+		}
+
+		if (cnt++ % 20 == 0){
+			wattron(conn_win, COLOR_PAIR(13));
+			for(int dec = 0; dec < anim_len; dec++){
+				char c = anim[(anim_len + anim_n - dec) % anim_len];
+				mvwprintw(conn_win, title_y, title_x - dec, "%c", c);
+				mvwprintw(conn_win, title_y, title_x + title_w - 1 + dec, "%c", c);
+			}
+			anim_n++;
+			if (anim_n >= anim_len) anim_n = 0;
+			wattroff(conn_win, COLOR_PAIR(13));
+			wrefresh(conn_win);
+		}
+
+		wrefresh(wins[win]);
+		usleep(10000);
+	} while (ch != '\n' || check_fields(txts) != 1);
+
+	delwin(conn_win);
+	clear();
+	refresh();
+
+	strncpy(game->player.name, txts[0], sizeof(game->player.name) - 1);
+	game->player.name[sizeof(game->player.name) - 1] = '\0';
+
+	strncpy(game->server_ip, txts[1], sizeof(game->server_ip) - 1);
+	game->server_ip[sizeof(game->server_ip) - 1] = '\0';
+
+	game->server_port = atoi(txts[2]);
+
+	write_config_str("pseudo", 	txts[0]);
+	write_config_str("ip", 		txts[1]);
+	write_config_str("port", 	txts[2]);
+
+	return 0;
+}
+
 int main_client(Game *game){
 	initscr();              // Démarrer ncurses
     cbreak();               // Lecture caractère par caractère
@@ -464,6 +674,9 @@ int main_client(Game *game){
 	init_pair(25, 25, 9); // Remplace le rouge qui marche plus
 
 
+	if (start_screen(game) != 0) goto exit_first;
+
+
 	// WINDOWS 
 	create_windows(game);
 	pthread_mutex_lock(&game->display.m_display_update);
@@ -490,6 +703,8 @@ exit_point:
 	pthread_cancel(com_tid); // Annuler le thread du serveur de chat
 	pthread_join(com_tid, NULL); // Attendre la fin du thread du serveur de chat
     delwin(game->display.main_win);                // Supprimer la fenêtre
+
+exit_first:
     clear();             // Clear all ncurses windows
 	refresh();           // Force draw to terminal
 	endwin();            // Restore terminal state

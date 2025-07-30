@@ -163,6 +163,7 @@ typedef struct {
 
 	int server_mode;
 	char server_ip[16]; // Adresse IP du serveur
+	uint16_t server_port;
 
 	char exit_error[256];
 	int print_error;

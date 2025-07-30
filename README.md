@@ -2,9 +2,10 @@
 
 ## Some sort of terminal chat
 
-pull, make & launch with `./quantum <username> <server_ip>`
+pull, make & launch with `./quantum`
 
 if you want to run the server: `./quantum -server`
+Default port is 18467, for now can only change it from 'includes.h' before compiling
 
 You need ncurses, normaly the makefile takes care of it
 
@@ -13,6 +14,6 @@ You need ncurses, normaly the makefile takes care of it
 By default, the docker image will run `./quantum -server`, 
 but you can use it as a client by typing the following:
 ```
-docker run --rm -it -v "path/to/config.txt:/app/config.txt" --env TERM=xterm-256color ghcr.io/leizar06001/quantum sh -c "./quantum <username> <server_ip>"
+docker run --rm -it -v "path/to/config.txt:/app/config.txt" --env TERM=xterm-256color ghcr.io/leizar06001/quantum sh -c "./quantum"
 ```
 
