@@ -1,6 +1,5 @@
 #include "includes.h"
 
-
 static wchar_t *c_wall_diag_r 	= L"╱";
 // static wchar_t *c_wall_diag_l 	= L"╲";
 // static wchar_t *c_horiz_one 	= L"─";
@@ -34,28 +33,28 @@ static int check_wall_type(Game *game, int x, int y){
 	return 0;
 }
 
-void clear_emoji_if_needed(WINDOW *win, int y, int x) {
-    cchar_t cval;
-    wchar_t wc;
+// void clear_emoji_if_needed(WINDOW *win, int y, int x) {
+//     cchar_t cval;
+//     wchar_t wc;
 
-    // Check (y, x - 1)
-    if (x > 0 && mvwin_wch(win, y, x - 1, &cval) != ERR) {
-        wc = cval.chars[0];
-        if (wcwidth(wc) == 2) {
-            mvwaddch(win, y, x - 1, ' ');
-            mvwaddch(win, y, x, ' ');
-        }
-    }
+//     // Check (y, x - 1)
+//     if (x > 0 && mvwin_wch(win, y, x - 1, &cval) != ERR) {
+//         wc = cval.chars[0];
+//         if (wcwidth(wc) == 2) {
+//             mvwaddch(win, y, x - 1, ' ');
+//             mvwaddch(win, y, x, ' ');
+//         }
+//     }
 
-    // Else check (y, x)
-    else if (mvwin_wch(win, y, x, &cval) != ERR) {
-        wc = cval.chars[0];
-        if (wcwidth(wc) == 2) {
-            mvwaddch(win, y, x, ' ');
-            mvwaddch(win, y, x + 1, ' ');
-        }
-    }
-}
+//     // Else check (y, x)
+//     else if (mvwin_wch(win, y, x, &cval) != ERR) {
+//         wc = cval.chars[0];
+//         if (wcwidth(wc) == 2) {
+//             mvwaddch(win, y, x, ' ');
+//             mvwaddch(win, y, x + 1, ' ');
+//         }
+//     }
+// }
 
 static const int wall_h = 3;
 static const int small_wall_h = 2;
@@ -149,6 +148,55 @@ static void draw_map_iso(Game *game){
 								break;
 
 						}
+						break;
+
+					// Vertical doors opened
+					case 'v':
+						set_map_color(game, 20);
+						for(int w = 0; w < cur_wall_h - 1; w++){
+							if (y - w > 0) mvwaddwstr(game->display.main_win, y - w, x, L"/");
+						}
+						set_map_color(game, 8);
+						break;
+
+					// Vertical doors closed
+					case 'V':
+						set_map_color(game, 25);
+						for(int w = 0; w < cur_wall_h + 1; w++){
+							if (y - w > 0) mvwaddwstr(game->display.main_win, y - w, x, L"/");
+						}
+						set_map_color(game, 8);
+						break;
+
+					// Horizontal doors opened
+					case 'h':
+						set_map_color(game, 20);
+						if (y > 0) {
+							mvwaddwstr(game->display.main_win, y, x, L"├");
+							if (x - 1 > 0) mvwaddwstr(game->display.main_win, y, x - 1, L"┤");
+						}
+						
+						if (y - 1 > 0){
+							mvwaddwstr(game->display.main_win, y - 1, x, L"┌");
+							if (x - 1 > 0) mvwaddwstr(game->display.main_win, y - 1, x - 1, L"┐");
+						}
+						set_map_color(game, 8);
+						break;
+
+					// Horizontal doors closed
+					case 'H':
+						set_map_color(game, 25);
+						for(int w = 0; w < cur_wall_h; w++){
+							if (y - w > 0) {
+								mvwaddwstr(game->display.main_win, y - w, x, L"├");
+								if (x - 1 > 0) mvwaddwstr(game->display.main_win, y - w, x - 1, L"┤");
+							}
+						}
+						if (y - cur_wall_h > 0){
+							mvwaddwstr(game->display.main_win, y - cur_wall_h, x, L"_");
+							if (x - 1 > 0) mvwaddwstr(game->display.main_win, y - cur_wall_h, x - 1, L"_");
+						}
+						set_map_color(game, 8);
 						break;
 					
 					default:

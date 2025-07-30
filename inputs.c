@@ -9,7 +9,7 @@
 #define KEY_QUIT 		27 	// ESC key
 
 int is_wall(Game *game, char c){
-	if (c == game->map.map_c_empty || c == 'v') return 0;
+	if (c == game->map.map_c_empty || c == 'v' || c == 'h') return 0;
 	return 1;
 }
 
@@ -99,7 +99,7 @@ int menu_character(Game *game){
 
     MEVENT event;
     int ch;
-    while ((ch = wgetch(stdscr)) != KEY_QUIT) {
+    while ((ch = wgetch(stdscr)) != KEY_F2) {
         if (ch == KEY_MOUSE) {
             if (getmouse(&event) == OK) {
                 // Vérifie si le clic est dans la fenêtre
@@ -220,7 +220,7 @@ void show_chat_menu(Game *game){
 
 	MEVENT event;
 	int ch;
-    while ((ch = wgetch(stdscr)) != KEY_QUIT) {
+    while ((ch = wgetch(stdscr)) != KEY_F3) {
 		if (ch == KEY_MOUSE) {
             if (getmouse(&event) == OK) {
 				// Vérifie si le clic est dans la fenêtre
@@ -331,13 +331,22 @@ int get_user_input(Game *game) {
 
 		case KEY_F1:	// ACTION
 			for(int i = 0; i < game->map.nb_doors; i++){
-				if (distance(game->player.x, game->player.y, game->map.doors[i].x, game->map.doors[i].y) <= 1){
+				if (distance(game->player.x, game->player.y, game->map.doors[i].x, game->map.doors[i].y) <= 2){
+					char *door_ch = &game->map.map[game->map.doors[i].y * game->map.w + game->map.doors[i].x];
 					if (game->map.doors[i].state == 0){
 						game->map.doors[i].state = 1;
-						game->map.map[game->map.doors[i].y * game->map.w + game->map.doors[i].x] = 'V';
+						if (*door_ch == 'v') {
+							*door_ch = 'V';
+						} else {
+							*door_ch = 'H';
+						}
 					} else {
 						game->map.doors[i].state = 0;
-						game->map.map[game->map.doors[i].y * game->map.w + game->map.doors[i].x] = 'v';
+						if (*door_ch == 'V') {
+							*door_ch = 'v';
+						} else {
+							*door_ch = 'h';
+						}
 					}
 					pthread_mutex_lock(&game->chat.m_send_text);
 					game->chat.door_change_id = i;

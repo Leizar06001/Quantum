@@ -73,7 +73,8 @@ int shortest_distance(const char *map, int map_w, int map_h,
             if (nx >= 0 && nx < map_w && ny >= 0 && ny < map_h &&
                 !visited[ny][nx] && 
 				map[ny * map_w + nx] != '1' && 
-				map[ny * map_w + nx] != 'V')
+				map[ny * map_w + nx] != 'V' && 
+				map[ny * map_w + nx] != 'H')
             {
                 visited[ny][nx] = 1;
                 queue[tail++] = (Point){nx, ny, p.dist + 1};

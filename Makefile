@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall  -g # -fsanitize=address
-LIBS = -pthread -lncursesw -lm
+CFLAGS = -Wall -g # -fsanitize=address
+LIBS = -pthread -lncursesw -lm -lc
 
 TARGET = quantum
 BUILD_DIR = build

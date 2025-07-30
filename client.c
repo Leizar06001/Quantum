@@ -88,6 +88,8 @@ void *chat_client_thread(void *arg) {
 	}
 	if (game->connected_to_server == 0) return NULL;
 
+	add_message(game, "[info]", game->player.color, "You joined the chat !", -1);
+
     // 3. Main loop with select()
     while (server_running) {
         fd_set readfds;
@@ -179,6 +181,7 @@ void *chat_client_thread(void *arg) {
 
 			recv_msg(game, buffer, len); // Process received message
         }
+		usleep(200);
     }
 	server_running = 0;
 
@@ -301,7 +304,7 @@ int game_loop(Game *game) {
 
 void init_pnjs(Game *game){
 	game->clients[MAX_CLIENTS - 1].connected = 2;
-	strcpy(game->clients[MAX_CLIENTS - 1].name, "BOSS");
+	strcpy(game->clients[MAX_CLIENTS - 1].name, "Roger");
 	game->clients[MAX_CLIENTS - 1].color 	= 18;
 	game->clients[MAX_CLIENTS - 1].x		= 21;
 	game->clients[MAX_CLIENTS - 1].y		= 83;
@@ -456,6 +459,9 @@ int main_client(Game *game){
 
 	init_color(24, 400, 400, 400);		// dark light gray
 	init_pair(24, 24, COLOR_BLACK);		// dark light borders
+
+	init_color(25, 800, 0, 0);
+	init_pair(25, 25, 9); // Remplace le rouge qui marche plus
 
 
 	// WINDOWS 
