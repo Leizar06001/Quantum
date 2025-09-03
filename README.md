@@ -1,5 +1,5 @@
 
-<img src="https://github.com/Leizar06001/Quantum/blob/a6bbbd634c4e3ea9151a29a9b7f005ea2fc8b0f6/Quantum.png" width="500"/>
+<img src="https://github.com/Leizar06001/Quantum/blob/a6bbbd634c4e3ea9151a29a9b7f005ea2fc8b0f6/Quantum.png" width="700"/>
 
 # Quantum
 
